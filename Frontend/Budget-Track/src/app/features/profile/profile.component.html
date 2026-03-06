@@ -1,0 +1,124 @@
+<div>
+    <!-- Tab buttons -->
+    <div class="d-flex gap-2 mb-4">
+        <button class="profile-tab-btn" [class.active]="tab === 'profile'" (click)="tab = 'profile'">
+            <i class="fas fa-user"></i> Profile
+        </button>
+        <button class="profile-tab-btn" [class.active]="tab === 'security'" (click)="tab = 'security'">
+            <i class="fas fa-key"></i> Security
+        </button>
+    </div>
+
+    @if (tab === 'profile') {
+    <div class="card rounded-3" style="max-width: 700px;">
+        <div class="card-body p-4">
+            <!-- Avatar + Name -->
+            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom"
+                style="border-color: var(--border-color) !important;">
+                <app-user-avatar [firstName]="auth.currentUser()?.firstName || ''"
+                    [lastName]="auth.currentUser()?.lastName || ''" role="Admin" [size]="56" />
+                <div>
+                    <h5 class="mb-0 fw-bold">{{ fullName() }}</h5>
+                    <span class="badge rounded-pill fs-xs px-2 mt-1 fw-semibold badge-role-primary">{{ userRole()
+                        }}</span>
+                </div>
+            </div>
+
+            <h6 class="fw-bold mb-3">Account Information</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-user"></i> FULL NAME</div>
+                    <div class="profile-field-value">{{ fullName() }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-envelope"></i> EMAIL ADDRESS</div>
+                    <div class="profile-field-value">{{ email() }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-hashtag"></i> EMPLOYEE ID</div>
+                    <div class="profile-field-value">{{ employeeId() }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-building"></i> DEPARTMENT</div>
+                    <div class="profile-field-value">{{ department() }}</div>
+                </div>
+                @if (userRole().toLowerCase() === 'employee') {
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-user-tie"></i> REPORTING MANAGER</div>
+                    <div class="profile-field-value">{{ managerName() || 'Not Assigned' }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="profile-field-label"><i class="fas fa-id-badge"></i> MANAGER EMP ID</div>
+                    <div class="profile-field-value">{{ managerEmployeeId() || 'N/A' }}</div>
+                </div>
+                }
+            </div>
+            <p class="fs-xs text-muted mt-3 mb-0">
+                <i class="fas fa-lock me-1"></i> Profile information is managed by your administrator. Contact Admin to
+                update your details.
+            </p>
+        </div>
+    </div>
+    }
+
+    @if (tab === 'security') {
+    <div class="card rounded-3" style="max-width: 500px;">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="fas fa-shield-alt me-2 text-primary-brand"></i>Change Password
+            </h6>
+            <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="needs-validation">
+                <div class="mb-3">
+                    <label class="form-label fs-sm fw-semibold">Current Password</label>
+                    <input type="password" class="form-control" formControlName="currentPassword"
+                        [class.is-invalid]="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.invalid"
+                        placeholder="Enter current password">
+                    @if (passwordForm.get('currentPassword')?.touched &&
+                    passwordForm.get('currentPassword')?.errors?.['required']) {
+                    <div class="invalid-feedback fs-xs">Current password is required.</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fs-sm fw-semibold">New Password</label>
+                    <input type="password" class="form-control" formControlName="newPassword"
+                        [class.is-invalid]="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.invalid"
+                        placeholder="Enter new password">
+                    <div class="invalid-feedback fs-xs">
+                        @if (passwordForm.get('newPassword')?.errors?.['required']) {
+                        New password is required.
+                        } @else if (passwordForm.get('newPassword')?.errors?.['minlength']) {
+                        Password must be at least 8 characters.
+                        } @else if (passwordForm.get('newPassword')?.errors?.['pattern']) {
+                        Password must contain uppercase, lowercase, number, and special character.
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fs-sm fw-semibold">Confirm New Password</label>
+                    <input type="password" class="form-control" formControlName="confirmPassword"
+                        [class.is-invalid]="passwordForm.get('confirmPassword')?.touched && (passwordForm.get('confirmPassword')?.invalid || passwordMismatch())"
+                        placeholder="Confirm new password">
+                    <div class="invalid-feedback fs-xs">
+                        @if (passwordForm.get('confirmPassword')?.errors?.['required']) {
+                        Confirmation is required.
+                        } @else if (passwordMismatch()) {
+                        Passwords do not match.
+                        }
+                    </div>
+                </div>
+
+                @if (formError()) {
+                <div class="alert alert-danger py-2 fs-sm">{{ formError() }}</div>
+                }
+
+                <button class="btn btn-primary mt-2" type="submit"
+                    [disabled]="changingPassword() || passwordForm.invalid || passwordMismatch()">
+                    @if (changingPassword()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+    }
+</div>

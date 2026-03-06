@@ -1,0 +1,364 @@
+<div class="budgets-page">
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--primary-light);">
+                    <i class="fa-solid fa-wallet" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Budgets</div>
+                    <div class="kpi-value">{{ totalBudgets() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #ecfdf5;">
+                    <i class="fa-solid fa-coins" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Allocated</div>
+                    <div class="kpi-value">{{ formatAmt(totalAllocated()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fa-solid fa-chart-line" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-value">{{ formatAmt(totalSpent()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #e0f2fe;">
+                    <i class="fa-solid fa-hand-holding-dollar" style="color: #0ea5e9;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Remaining</div>
+                    <div class="kpi-value">{{ formatAmt(totalRemaining()) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search + Filter Bar -->
+    <div class="search-filter-bar">
+        <div class="search-input-wrap" style="flex: 0 0 200px; max-width: 200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" [(ngModel)]="searchCode" (ngModelChange)="onSearch()" placeholder="Search by code">
+        </div>
+        <div class="search-input-wrap flex-fill">
+            <i class="fas fa-search"></i>
+            <input type="text" [(ngModel)]="searchTitle" (ngModelChange)="onSearch()" placeholder="Search by title">
+        </div>
+
+        <!-- Admin filters -->
+        @if (role() === 'Admin') {
+        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="onSearch()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Closed">Closed</option>
+            <option value="Deleted">Deleted</option>
+            <option value="Expired">Expired</option>
+            <option value="OverBudget">Over Budget</option>
+        </select>
+        <select class="filter-select" [(ngModel)]="filterDeptId" (ngModelChange)="onSearch()">
+            <option value="">All Departments</option>
+            @for (d of departments(); track d.departmentID) {
+            <option [value]="d.departmentID">{{ d.departmentName }}</option>
+            }
+        </select>
+        }
+
+        <!-- Manager filters -->
+        @if (role() === 'Manager') {
+        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="onSearch()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Closed">Closed</option>
+            <option value="Expired">Expired</option>
+            <option value="OverBudget">Over Budget</option>
+        </select>
+        }
+
+        <!-- Clear Filter -->
+        @if (searchCode || searchTitle || (filterStatus && filterStatus !== 'Active') || filterDeptId) {
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()"
+            style="height: 40px; border-radius: var(--border-radius);">
+            <i class="fas fa-times me-1"></i> Clear
+        </button>
+        }
+
+        @if (isManager()) {
+        <div class="ms-auto">
+            <button class="btn btn-primary btn-sm" (click)="openCreate()">
+                <i class="fas fa-plus me-1"></i> New Budget
+            </button>
+        </div>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="bt-table-wrapper">
+        @if (loading()) {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        } @else if (filteredData().length === 0) {
+        <div class="empty-state">
+            <i class="fa-solid fa-wallet"></i>
+            <p>No Budgets found.</p>
+        </div>
+        } @else {
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>BUDGET CODE</th>
+                        <th>TITLE</th>
+                        @if (role() === 'Admin') { <th>MANAGER</th> }
+                        <th>DEPARTMENT</th>
+                        <th class="text-end">ALLOCATED</th>
+                        <th class="text-end">SPENT</th>
+                        <th style="min-width:140px;">UTILIZATION</th>
+                        <th>STATUS</th>
+                        <th>START DATE</th>
+                        <th>END DATE</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (b of filteredData(); track b.budgetID) {
+                    <tr [ngClass]="rowClass(b)">
+                        <td><code class="fs-xs">{{ b.code }}</code></td>
+                        <td>
+                            <div class="fw-semibold fs-sm">{{ b.title }}</div>
+                        </td>
+                        @if (role() === 'Admin') {
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <app-user-avatar [firstName]="b.createdByName.split(' ')[0]"
+                                    [lastName]="b.createdByName.split(' ')[1] || ''" [size]="24" />
+                                <span class="fs-xs text-muted">{{ b.createdByName }}</span>
+                            </div>
+                        </td>
+                        }
+                        <td class="fs-sm">{{ b.departmentName }}</td>
+                        <td class="text-end fs-sm fw-semibold">{{ formatAmt(b.amountAllocated) }}</td>
+                        <td class="text-end fs-sm text-muted">{{ formatAmt(b.amountSpent) }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="utilization-bar flex-grow-1">
+                                    <div class="fill" [ngClass]="utilClass(b.utilizationPercentage)"
+                                        [style.width.%]="Math.min(b.utilizationPercentage, 100)"></div>
+                                </div>
+                                <span class="fs-xs fw-semibold" [style.color]="utilColor(b.utilizationPercentage)">{{
+                                    b.utilizationPercentage.toFixed(1) }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <app-status-badge [status]="getDisplayStatus(b)" [label]="getDisplayStatus(b)" />
+                        </td>
+                        <td class="fs-xs text-muted">{{ b.startDate | slice:0:10 }}</td>
+                        <td class="fs-xs text-muted">{{ b.endDate | slice:0:10 }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a [routerLink]="['/budgets', b.budgetID, 'expenses']"
+                                    class="btn-icon-action view text-decoration-none" title="View Expenses">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if (isManager()) {
+                                <button class="btn-icon-action edit" (click)="openEdit(b)" title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="btn-icon-action delete" (click)="openDelete(b)" title="Delete"
+                                    data-bs-toggle="modal" data-bs-target="#deleteBudgetModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="px-3 py-1 border-top" style="border-color: rgba(0,0,0,0.06) !important;">
+            <app-pagination [currentPage]="currentPage" [totalPages]="data().totalPages"
+                [totalRecords]="data().totalRecords" [pageSize]="pageSize" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)" />
+        </div>
+        }
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <app-confirm-modal modalId="deleteBudgetModal" title="Delete Budget" [message]="deleteBudgetMessage"
+        confirmLabel="Delete" (confirmed)="onDelete()" />
+
+    <!-- Create/Edit Modal -->
+    <div class="modal fade" id="budgetFormModal" tabindex="-1" aria-hidden="true"
+        aria-labelledby="budgetFormModalTitle">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+            @if (budgetForm) {
+            <div class="modal-content border-0 rounded-4" style="box-shadow: 0 24px 64px rgba(0,0,0,0.12);">
+
+                <!-- Header -->
+                <div class="d-flex flex-column align-items-center text-center px-4 pt-4 pb-3 border-bottom"
+                    style="border-color: #f1f5f9 !important;">
+                    <div class="status-icon-wrap-sm mb-3" style="background:#e0f2fe;">
+                        <i class="fas fa-wallet" style="color:#0ea5e9;font-size:1.1rem;"></i>
+                    </div>
+                    <h5 id="budgetFormModalTitle" class="fw-bold text-dark mb-1 fs-6">{{ editMode() ?
+                        'Edit Budget' : 'New Budget' }}</h5>
+                    <p class="mb-0 text-muted fs-xs">{{ editMode() ? 'Update the budget details
+                        below' : 'Fill in the details to create a new budget' }}</p>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form [formGroup]="budgetForm!" (ngSubmit)="onSave()">
+                    <div class="modal-body px-4 py-3">
+                        <div class="row g-3">
+
+                            <!-- Title -->
+                            <div class="col-12">
+                                <label class="bm-label">Budget Title <span class="text-danger">*</span></label>
+                                <input class="bm-input" formControlName="title"
+                                    placeholder="e.g., Annual Marketing 2024"
+                                    [class.bm-input-error]="f['title']?.touched && f['title']?.invalid">
+                                @if (f['title']?.touched && f['title']?.invalid) {
+                                <div class="bm-error-msg">Title is required.</div>
+                                }
+                            </div>
+
+                            <!-- Budget Code (edit only) -->
+                            @if (editMode()) {
+                            <div class="col-12">
+                                <label class="bm-label">Budget Code</label>
+                                <div class="bm-input d-flex align-items-center"
+                                    style="background:#f8fafc; color:#64748b; cursor:default;">
+                                    <i class="fas fa-hashtag me-2 fs-sm" style="color:#94a3b8;"></i>
+                                    <span class="fw-semibold fs-sm">{{ selectedBudget()?.code }}</span>
+                                </div>
+                            </div>
+                            }
+
+                            <!-- Department (Admin only) -->
+                            @if (role() === 'Admin') {
+                            <div class="col-12">
+                                <label class="bm-label">Department <span class="text-danger">*</span></label>
+                                <select class="bm-input" formControlName="departmentID"
+                                    [class.bm-input-error]="f['departmentID']?.touched && f['departmentID']?.invalid">
+                                    <option value="">Select Department...</option>
+                                    @for (d of departments(); track d.departmentID) {
+                                    <option [value]="d.departmentID">{{ d.departmentName }}</option>
+                                    }
+                                </select>
+                                @if (f['departmentID']?.touched && f['departmentID']?.invalid) {
+                                <div class="bm-error-msg">Department is required.</div>
+                                }
+                            </div>
+                            }
+
+                            <!-- Amount -->
+                            <div class="col-12">
+                                <label class="bm-label">Allocated Amount (₹) <span class="text-danger">*</span></label>
+                                <div class="bm-input-icon-wrap">
+                                    <span class="bm-prefix">₹</span>
+                                    <input type="number" class="bm-input bm-input-prefixed"
+                                        formControlName="amountAllocated" placeholder="0.00"
+                                        [class.bm-input-error]="f['amountAllocated']?.touched && f['amountAllocated']?.invalid">
+                                </div>
+                                @if (f['amountAllocated']?.touched && f['amountAllocated']?.invalid) {
+                                <div class="bm-error-msg">
+                                    <span *ngIf="f['amountAllocated']?.errors?.['required']">Amount is required.</span>
+                                    <span *ngIf="f['amountAllocated']?.errors?.['min']">Must be greater than
+                                        zero.</span>
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Dates -->
+                            <div class="col-6">
+                                <label class="bm-label">Start Date <span class="text-danger">*</span></label>
+                                <input type="date" class="bm-input" formControlName="startDate"
+                                    [class.bm-input-error]="f['startDate']?.touched && f['startDate']?.invalid">
+                                @if (f['startDate']?.touched && f['startDate']?.invalid) {
+                                <div class="bm-error-msg">Required.</div>
+                                }
+                            </div>
+
+                            <div class="col-6">
+                                <label class="bm-label">End Date <span class="text-danger">*</span></label>
+                                <input type="date" class="bm-input" formControlName="endDate"
+                                    [class.bm-input-error]="f['endDate']?.touched && (f['endDate']?.invalid || budgetForm!.errors?.['dateRange'])">
+                                @if (f['endDate']?.touched && (f['endDate']?.invalid ||
+                                budgetForm!.errors?.['dateRange'])) {
+                                <div class="bm-error-msg">
+                                    <span *ngIf="f['endDate']?.errors?.['required']">Required.</span>
+                                    <span
+                                        *ngIf="!f['endDate']?.errors?.['required'] && budgetForm!.errors?.['dateRange']">Must
+                                        be after Start.</span>
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Status (edit only) -->
+                            @if (editMode()) {
+                            <div class="col-12">
+                                <label class="bm-label">Budget Status</label>
+                                <div class="bm-status-toggle">
+                                    <button type="button" class="bm-status-btn"
+                                        [class.active-status]="budgetForm!.get('status')?.value == 1"
+                                        (click)="budgetForm!.get('status')?.setValue(1)">
+                                        <i class="fas fa-check-circle me-1"></i> Active
+                                    </button>
+                                    <button type="button" class="bm-status-btn"
+                                        [class.closed-status]="budgetForm!.get('status')?.value == 2"
+                                        (click)="budgetForm!.get('status')?.setValue(2)">
+                                        <i class="fas fa-times-circle me-1"></i> Closed
+                                    </button>
+                                </div>
+                            </div>
+                            }
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label class="bm-label">Notes</label>
+                                <textarea class="bm-input" formControlName="notes" rows="2"
+                                    placeholder="Brief description..." style="height:auto; resize:none;"></textarea>
+                            </div>
+
+                        </div>
+
+                        @if (formError()) {
+                        <div class="d-flex align-items-center gap-2 mt-3 px-3 py-2 rounded-3 alert-danger-soft">
+                            <i class="fas fa-exclamation-circle"></i> {{ formError() }}
+                        </div>
+                        }
+                    </div>
+
+                    <div class="px-4 pb-4 pt-2 d-flex gap-2">
+                        <button class="btn flex-fill py-2 fw-semibold border-0 btn-light-soft fs-sm" type="button"
+                            data-bs-dismiss="modal" style="border-radius:12px;">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary flex-fill py-2 fw-semibold fs-sm" type="submit"
+                            [disabled]="saving() || (budgetForm!.invalid && budgetForm!.touched)"
+                            style="border-radius:12px;">
+                            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                            {{ editMode() ? 'Update Budget' : 'Create Budget' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            }
+        </div>
+    </div>
+</div>

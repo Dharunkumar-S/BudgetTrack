@@ -1,0 +1,1040 @@
+<div class="reports-dashboard">
+    <!-- Header with Tabs -->
+    <div class="filter-bar mb-4">
+        <div class="filter-pills">
+            @if (isAdmin()) {
+            <button type="button" class="filter-pill" [class.active]="activeTab() === 'period'"
+                (click)="onTabChange('period')">
+                <i class="fa-solid fa-calendar-alt me-2"></i>Period Report
+            </button>
+            <button type="button" class="filter-pill" [class.active]="activeTab() === 'department'"
+                (click)="onTabChange('department')">
+                <i class="fa-solid fa-building me-2"></i>Department Report
+            </button>
+            }
+            <button type="button" class="filter-pill" [class.active]="activeTab() === 'budget'"
+                (click)="onTabChange('budget')">
+                <i class="fa-solid fa-wallet me-2"></i>Budget Report
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       PERIOD REPORT TAB
+       ═══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'period' && isAdmin()) {
+    <!-- Period Filter Section -->
+    <div class="filter-bar align-items-end mb-4">
+        <div>
+            <label class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Start Date</label>
+            <input type="date" class="form-control modern-input-sm" style="width: 180px;" [(ngModel)]="periodStart"
+                [max]="periodEndString" />
+        </div>
+        <div>
+            <label class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">End Date</label>
+            <input type="date" class="form-control modern-input-sm" style="width: 180px;" [(ngModel)]="periodEnd"
+                [min]="periodStartString" />
+        </div>
+        <div style="padding-top: 1.35rem;">
+            <button class="btn btn-primary-premium px-4 py-2 fw-bold text-white d-flex align-items-center gap-2"
+                style="height:38px; border-radius:10px;" type="button" (click)="loadPeriodReport()"
+                [disabled]="periodLoading()">
+                @if (periodLoading()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                <i class="fa-solid fa-play"></i>
+                }
+                Generate
+            </button>
+        </div>
+        @if (periodReport()) {
+        <div style="padding-top: 1.35rem;">
+            <button class="btn d-flex align-items-center gap-2 fw-bold"
+                style="height:38px; border-radius:10px; background:#16a34a; color:#fff; border:none; padding: 0 1rem;"
+                type="button" (click)="downloadReport()">
+                <i class="fa-solid fa-file-excel"></i>
+                Download Excel
+            </button>
+        </div>
+        }
+    </div>
+
+    @if (periodLoading()) {
+    <div class="skeleton-section" role="status" aria-live="polite">
+        <div class="row g-4 mb-4">
+            @for (card of [1, 2, 3, 4]; track card) {
+            <div class="col-xl-3 col-md-6">
+                <div class="kpi-card skeleton-card">
+                    <div class="kpi-icon skeleton-pill"></div>
+                    <div class="kpi-content">
+                        <div class="skeleton-text skeleton-text-sm mb-2"></div>
+                        <div class="skeleton-text skeleton-text-lg"></div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <div class="card rounded-4 shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="skeleton-chart mb-3"></div>
+                <div class="skeleton-text skeleton-text-sm w-25"></div>
+            </div>
+        </div>
+
+        <div class="card rounded-4 shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                @for (h of [1, 2, 3, 4, 5, 6]; track h) {
+                                <th>
+                                    <span class="skeleton-text skeleton-text-xs w-75"></span>
+                                </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of [1, 2, 3, 4, 5]; track row) {
+                            <tr>
+                                @for (col of [1, 2, 3, 4, 5, 6]; track col) {
+                                <td>
+                                    <div class="skeleton-text skeleton-text-sm"></div>
+                                </td>
+                                }
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    } @else if (periodReport()) {
+    <!-- KPI Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card kpi-card-blue">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Budgets</div>
+                    <div class="kpi-value">{{ periodReport()!.totalBudgetCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card kpi-card-purple">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Allocated</div>
+                    <div class="kpi-value">
+                        {{ formatCurrency(periodReport()!.totalBudgetAmount) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card kpi-card-green">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-value">
+                        {{ formatCurrency(periodReport()!.totalBudgetAmountSpent) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card kpi-card-orange">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Remaining</div>
+                    <div class="kpi-value">
+                        {{ formatCurrency(periodReport()!.totalBudgetAmountRemaining) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="card rounded-4 shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">
+                Allocated vs Spent vs Remaining
+            </h5>
+            @if ((periodReport()?.budgets?.length ?? 0) > 8) {
+            <span class="badge bg-light text-muted fs-xs border">
+                <i class="fa-solid fa-arrows-left-right me-1"></i>Scroll to explore
+            </span>
+            }
+        </div>
+        <div class="card-body p-4">
+            <div class="chart-scroll-wrapper">
+                <div class="w-100" [style.min-width]="periodChartMinWidth()">
+                    <div class="chart-container period-chart-container position-relative w-100">
+                        <canvas #periodBarChart></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Breakdown Table -->
+    <div class="card rounded-4 shadow-sm border-0">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">Budget Breakdown</h5>
+                <small class="text-muted fs-xs">
+                    {{ periodStartString }} → {{ periodEndString }} ·
+                    {{ periodReport()!.budgets.length }} budgets
+                </small>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">CODE</th>
+                            <th>TITLE</th>
+                            <th class="text-end">ALLOCATED</th>
+                            <th class="text-end">SPENT</th>
+                            <th class="text-end">REMAINING</th>
+                            <th class="pe-4 text-end">UTILIZATION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (budget of periodReport()!.budgets; track budget.budgetCode) {
+                        <tr>
+                            <td class="ps-4">
+                                <code class="fs-xs fw-bold text-primary">{{ budget.budgetCode }}</code>
+                            </td>
+                            <td>
+                                <div class="fw-semibold fs-sm">{{ budget.budgetTitle }}</div>
+                            </td>
+                            <td class="text-end">
+                                <span class="fs-sm fw-medium">{{
+                                    formatCurrency(budget.allocatedAmount)
+                                    }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="fs-sm fw-medium">{{
+                                    formatCurrency(budget.amountSpent)
+                                    }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="fs-sm text-muted">{{
+                                    formatCurrency(budget.amountRemaining)
+                                    }}</span>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <div class="utilization-bar" style="width: 80px;">
+                                        <div class="fill" [ngClass]="getUtilizationClass(budget.utilizationPercentage)"
+                                            [style.width.%]="Math.min(budget.utilizationPercentage, 100)"></div>
+                                    </div>
+                                    <span class="fs-xs fw-bold" [class.text-success]="budget.utilizationPercentage < 50"
+                                        [class.text-warning]="
+                            budget.utilizationPercentage >= 50 &&
+                            budget.utilizationPercentage < 80
+                          " [class.text-danger]="budget.utilizationPercentage >= 80">
+                                        {{ safePercent(budget.utilizationPercentage) }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    } @else {
+    <!-- Empty State -->
+    <div class="empty-state py-5">
+        <div class="empty-icon mb-3">
+            <i class="fa-solid fa-calendar-check text-primary-brand" style="font-size: 4rem; opacity: 0.3;"></i>
+        </div>
+        <h5 class="text-muted">Select a date range to generate report</h5>
+        <p class="text-muted fs-sm">Choose start and end dates above, then click Generate</p>
+    </div>
+    }
+    }
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       DEPARTMENT REPORT TAB
+       ═══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'department' && isAdmin()) {
+    @if (deptReport()) {
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn d-flex align-items-center gap-2 fw-bold"
+            style="height:38px; border-radius:10px; background:#16a34a; color:#fff; border:none; padding: 0 1rem;"
+            type="button" (click)="downloadReport()">
+            <i class="fa-solid fa-file-excel"></i>
+            Download Excel
+        </button>
+    </div>
+    }
+    @if (deptLoading()) {
+    <div class="skeleton-section" role="status" aria-live="polite">
+        <div class="row g-3 mb-3">
+            @for (card of [1, 2, 3, 4]; track card) {
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card skeleton-card">
+                    <div class="kpi-icon skeleton-pill"></div>
+                    <div class="kpi-content">
+                        <div class="skeleton-text skeleton-text-sm mb-2"></div>
+                        <div class="skeleton-text skeleton-text-lg"></div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-xl-8">
+                <div class="card rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="skeleton-chart mb-3"></div>
+                        <div class="skeleton-text skeleton-text-sm w-25"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="card rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="skeleton-chart mb-3"></div>
+                        <div class="skeleton-text skeleton-text-sm w-50 mx-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card rounded-4 shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                @for (h of [1, 2, 3, 4, 5, 6, 7]; track h) {
+                                <th>
+                                    <span class="skeleton-text skeleton-text-xs w-75"></span>
+                                </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of [1, 2, 3, 4, 5]; track row) {
+                            <tr>
+                                @for (col of [1, 2, 3, 4, 5, 6, 7]; track col) {
+                                <td>
+                                    <div class="skeleton-text skeleton-text-sm"></div>
+                                </td>
+                                }
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    } @else if (deptReport()) {
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="kpi-card kpi-card-blue">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Departments</div>
+                    <div class="kpi-value">{{ deptReport()!.totalDepartmentcount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="kpi-card kpi-card-purple">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Allocated</div>
+                    <div class="kpi-value">{{ fmtAmt(deptReport()!.totalbudgetAmount) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="kpi-card kpi-card-green">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-value">{{ fmtAmt(deptReport()!.totalbudgetAmountUsed) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="kpi-card kpi-card-orange">
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Remaining</div>
+                    <div class="kpi-value">
+                        {{ fmtAmt(deptReport()!.totalbudgetAmountRemaining) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+            <div class="card rounded-4 shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">
+                        Budget vs Spend by Department
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="chart-container position-relative w-100" style="height: 360px;">
+                        <canvas #deptBarChart aria-label="Budget vs Spend by Department chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card rounded-4 shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">Spend Distribution</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="chart-container mb-3 position-relative w-100" style="height: 280px;">
+                        <canvas #deptPieChart aria-label="Spend distribution pie chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Table -->
+    <div class="card rounded-4 shadow-sm border-0">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">Department Summary</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">DEPARTMENT</th>
+                            <th class="text-end">ALLOCATED</th>
+                            <th class="text-end">SPENT</th>
+                            <th class="text-end">REMAINING</th>
+                            <th class="text-center">UTILIZATION</th>
+                            <th class="text-center">BUDGETS</th>
+                            <th class="text-center pe-4">EXPENSES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (d of visibleDepartments(); track d.departmentName) {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-semibold fs-sm">{{ d.departmentName }}</div>
+                            </td>
+                            <td class="text-end fs-sm">{{ fmtAmt(d.amountAllocated) }}</td>
+                            <td class="text-end fs-sm">{{ fmtAmt(d.amountSpent) }}</td>
+                            <td class="text-end fs-sm">{{ fmtAmt(d.amountRemaining) }}</td>
+                            <td class="text-center pe-2">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <div class="utilization-bar" style="width: 80px;">
+                                        <div class="fill" [ngClass]="utilClass(d.utilizationPercentage)"
+                                            [style.width.%]="Math.min(d.utilizationPercentage, 100)"></div>
+                                    </div>
+                                    <span class="fs-xs fw-semibold">{{ safePercent(d.utilizationPercentage) }}%</span>
+                                </div>
+                            </td>
+                            <td class="text-center">{{ d.budgetcount }}</td>
+                            <td class="text-center pe-4">{{ d.expensecount }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    } @else {
+    <div class="empty-state py-5">
+        <div class="empty-icon mb-3">
+            <i class="fa-solid fa-building text-primary-brand" style="font-size: 4rem; opacity: 0.3;"></i>
+        </div>
+        <h5 class="text-muted">No department data available</h5>
+    </div>
+    }
+    }
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       BUDGET DETAIL TAB
+       ═══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'budget') {
+    <div class="filter-bar align-items-end mb-4">
+        <div style="flex: 1; min-width: 250px; max-width: 420px;">
+            <label class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Budget</label>
+            <select class="form-select modern-input-sm" [(ngModel)]="budgetCode"
+                aria-label="Select budget for detailed report">
+                <option [ngValue]="''" disabled>Select a budget...</option>
+                @for (b of budgetOptions(); track b.code) {
+                <option [ngValue]="b.code">{{ b.code }} — {{ b.title }}</option>
+                }
+            </select>
+            @if (budgetOptionsLoading()) {
+            <div class="text-muted fs-xs mt-1 d-flex align-items-center gap-1">
+                <span class="spinner-border spinner-border-sm" style="width:10px;height:10px;"></span>
+                Loading budgets...
+            </div>
+            } @else if (budgetOptionsError()) {
+            <div class="text-danger fs-xs mt-1">{{ budgetOptionsError() }}</div>
+            }
+        </div>
+        <div style="padding-top: 1.35rem;">
+            <button class="btn btn-primary-premium px-4 py-2 fw-bold text-white d-flex align-items-center gap-2"
+                style="height:38px; border-radius:10px;" type="button" (click)="loadBudgetReport()"
+                [disabled]="budgetLoading() || !budgetCode">
+                @if (budgetLoading()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                <i class="fa-solid fa-play"></i>
+                }
+                Generate
+            </button>
+        </div>
+        @if (budgetReport()) {
+        <div style="padding-top: 1.35rem;">
+            <button class="btn d-flex align-items-center gap-2 fw-bold"
+                style="height:38px; border-radius:10px; background:#16a34a; color:#fff; border:none; padding: 0 1rem;"
+                type="button" (click)="downloadReport()">
+                <i class="fa-solid fa-file-excel"></i>
+                Download Excel
+            </button>
+        </div>
+        }
+    </div>
+
+    @if (budgetLoading()) {
+    <div class="skeleton-section" role="status" aria-live="polite">
+        <div class="row g-3 mb-3">
+            @for (card of [1, 2, 3, 4]; track card) {
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card skeleton-card">
+                    <div class="kpi-icon skeleton-pill"></div>
+                    <div class="kpi-content">
+                        <div class="skeleton-text skeleton-text-sm mb-2"></div>
+                        <div class="skeleton-text skeleton-text-lg"></div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-xl-8">
+                <div class="card rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="skeleton-chart mb-3"></div>
+                        <div class="skeleton-text skeleton-text-sm w-25"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="card rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="skeleton-list">
+                            @for (row of [1, 2, 3, 4, 5]; track row) {
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="flex-grow-1 me-3">
+                                    <div class="skeleton-text skeleton-text-sm mb-1"></div>
+                                    <div class="skeleton-text skeleton-text-xs w-50"></div>
+                                </div>
+                                <div class="skeleton-pill skeleton-badge"></div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card rounded-4 shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                @for (h of [1, 2, 3, 4, 5, 6]; track h) {
+                                <th>
+                                    <span class="skeleton-text skeleton-text-xs w-75"></span>
+                                </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of [1, 2, 3, 4, 5]; track row) {
+                            <tr>
+                                @for (col of [1, 2, 3, 4, 5, 6]; track col) {
+                                <td>
+                                    <div class="skeleton-text skeleton-text-sm"></div>
+                                </td>
+                                }
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    } @else if (budgetReport()) {
+    <!-- Budget Info Header Card -->
+    <div class="card rounded-4 border mb-4 shadow-none">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
+                <!-- Left: Title + Code + Dept -->
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="background: var(--primary-light); width:44px; height:44px; border-radius:10px;">
+                        <i class="fa-solid fa-wallet" style="color: var(--primary); font-size:1.1rem;"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                            <h6 class="mb-0 fw-bold text-dark">{{ budgetReport()!.budgetTitle }}</h6>
+                            <code class="rounded-1"
+                                style="color: var(--primary); font-size:0.7rem; background: var(--primary-light); padding: 2px 6px;">{{ budgetReport()!.budgetCode }}</code>
+                            @if (budgetReport()!.status === 'Active' && !budgetReport()!.isExpired) {
+                            <span class="badge rounded-pill px-2 py-1 fs-xs badge-active">● Active</span>
+                            }
+                            @if (budgetReport()!.status !== 'Active') {
+                            <span class="badge rounded-pill px-2 py-1 fs-xs badge-closed">● {{ budgetReport()!.status
+                                }}</span>
+                            }
+                            @if (budgetReport()!.isExpired) {
+                            <span class="badge rounded-pill px-2 py-1 fs-xs badge-expired">● Expired</span>
+                            }
+                            @if (budgetReport()!.utilizationPercentage > 100) {
+                            <span class="badge rounded-pill px-2 py-1 fs-xs text-white fw-semibold"
+                                style="background: #dc2626;">⚠ Over Budget</span>
+                            }
+                        </div>
+                        <div class="text-muted fs-xs">
+                            {{ budgetReport()!.departmentName }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Manager + Dates + Days -->
+                <div class="d-flex flex-wrap gap-4 align-items-stretch">
+                    <div class="text-start d-flex flex-column justify-content-start">
+                        <div class="text-muted fs-xs fw-semibold text-uppercase mb-1">Manager</div>
+                        <div class="fw-semibold fs-sm mb-0 lh-sm">
+                            {{ budgetReport()!.managerName || 'Unassigned' }}
+                        </div>
+                    </div>
+                    <div class="border-start ps-4 text-start d-flex flex-column justify-content-start">
+                        <div class="text-muted fs-xs fw-semibold text-uppercase mb-1">Emp ID</div>
+                        <div class="fw-semibold fs-sm mb-0 text-muted lh-sm">
+                            {{ budgetReport()!.managerEmployeeId || 'N/A' }}
+                        </div>
+                    </div>
+                    <div class="border-start ps-4 text-start d-flex flex-column justify-content-start">
+                        <div class="text-muted fs-xs fw-semibold text-uppercase mb-1">Start Date</div>
+                        <div class="fw-semibold fs-sm mb-0 lh-sm">
+                            {{ budgetReport()!.startDate | slice: 0 : 10 }}
+                        </div>
+                    </div>
+                    <div class="border-start ps-4 text-start d-flex flex-column justify-content-start">
+                        <div class="text-muted fs-xs fw-semibold text-uppercase mb-1">End Date</div>
+                        <div class="fw-semibold fs-sm mb-0 lh-sm">
+                            {{ budgetReport()!.endDate | slice: 0 : 10 }}
+                        </div>
+                    </div>
+                    <div class="border-start ps-4 text-start d-flex flex-column justify-content-start">
+                        <div class="text-muted fs-xs fw-semibold text-uppercase mb-1">Time Left</div>
+                        <div class="fw-semibold fs-sm mb-0 flex-grow-1 lh-sm"
+                            [class.text-danger]="budgetReport()!.daysRemaining < 30"
+                            [class.text-success]="budgetReport()!.daysRemaining >= 30">
+                            {{ budgetReport()!.daysRemaining }} days
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Utilization Bar -->
+            <div class="d-flex align-items-center gap-3 mt-3 pt-3 border-top"
+                style="border-color: var(--border-color) !important;">
+                <span class="text-muted fs-xs fw-semibold text-uppercase">Utilization</span>
+                <div class="utilization-bar flex-grow-1" aria-hidden="true" style="height: 6px;">
+                    <div class="fill" [ngClass]="utilClass(budgetReport()!.utilizationPercentage)"
+                        [style.width.%]="Math.min(budgetReport()!.utilizationPercentage, 100)"></div>
+                </div>
+                <span class="fs-sm fw-bold" [class.text-danger]="budgetReport()!.utilizationPercentage >= 80"
+                    [class.text-warning]="
+                budgetReport()!.utilizationPercentage >= 50 &&
+                budgetReport()!.utilizationPercentage < 80
+              " [class.text-success]="budgetReport()!.utilizationPercentage < 50">
+                    {{ safePercent(budgetReport()!.utilizationPercentage) }}%
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial KPIs (horizontal Dashboard style) -->
+    <div class="row g-3 mb-3">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--primary-light);">
+                    <i class="fa-solid fa-coins" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Allocated</div>
+                    <div class="kpi-value">{{ fmtAmt(budgetReport()!.allocatedAmount) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #ecfdf5;">
+                    <i class="fa-solid fa-chart-line" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Spent</div>
+                    <div class="kpi-value">{{ fmtAmt(budgetReport()!.amountSpent) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #e0f2fe;">
+                    <i class="fa-solid fa-hand-holding-dollar" style="color: #0ea5e9;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Remaining</div>
+                    <div class="kpi-value">{{ fmtAmt(budgetReport()!.amountRemaining) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Utilization</div>
+                    <div class="kpi-value">
+                        {{ safePercent(budgetReport()!.utilizationPercentage) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Count KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #f1f5f9;">
+                    <i class="fa-solid fa-receipt" style="color: #64748b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Expenses</div>
+                    <div class="kpi-value">{{ budgetReport()!.totalExpenseCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fffbeb;">
+                    <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Pending</div>
+                    <div class="kpi-value" style="color: #f59e0b;">
+                        {{ budgetReport()!.pendingExpenseCount }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #dcfce7;">
+                    <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Approved</div>
+                    <div class="kpi-value" style="color: #16a34a;">
+                        {{ budgetReport()!.approvedExpenseCount }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef2f2;">
+                    <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Rejected</div>
+                    <div class="kpi-value" style="color: #ef4444;">
+                        {{ budgetReport()!.rejectedExpenseCount }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row: Bar + Pie -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="bt-table-wrapper h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="h6 mb-0 fw-bold">Allocated vs Spent vs Remaining</h2>
+                </div>
+                <div class="chart-canvas-area px-4 py-3 position-relative" style="flex:1; min-height:280px;">
+                    <canvas #budgetBarChart aria-label="Budget financial breakdown bar chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="bt-table-wrapper h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="mb-0 fw-semibold text-dark" style="font-size: 17px;">
+                        Category Distribution
+                    </h2>
+                </div>
+                <div class="px-4 py-4 d-flex flex-grow-1 align-items-center justify-content-center w-100 overflow-hidden"
+                    style="min-height: 350px;">
+                    <div class="chart-container w-100 h-100 position-relative">
+                        <canvas #budgetCategoryPie aria-label="Expense category distribution pie chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Status Breakdown (Donut) + Recent Expenses -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="bt-table-wrapper h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="mb-0 fw-semibold text-dark" style="font-size: 17px;">
+                        Expense Status
+                    </h2>
+                    <span class="badge rounded-pill bg-light text-muted border fw-medium px-3 py-2"
+                        style="font-size: 12px;">Approval Rate: {{ safePercent(budgetReport()!.approvalRate) }}%</span>
+                </div>
+                <div class="px-4 py-4 d-flex flex-grow-1 align-items-center justify-content-center w-100 overflow-hidden"
+                    style="min-height: 350px;">
+                    <div class="chart-container w-100 h-100 position-relative">
+                        <canvas #budgetStatusDonut aria-label="Expense status donut chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="bt-table-wrapper h-100">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="mb-0 fw-semibold text-dark" style="font-size: 17px;">
+                        Employee Expenses
+                    </h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted fs-xs fw-medium me-1">
+                            @if (employeeStats().length > 0) {
+                            {{ employeePage() * 5 + 1 }}-{{ employeePageEnd() }} of
+                            {{ employeeStats().length }}
+                            } @else {
+                            0 of 0
+                            }
+                        </span>
+                        <button class="btn btn-sm btn-outline-secondary rounded-circle"
+                            style="width: 26px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                            (click)="prevEmployeePage()" [disabled]="!hasPrevEmployeePage()">
+                            <i class="fa-solid fa-chevron-left fs-xs"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-circle"
+                            style="width: 26px; height: 26px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                            (click)="nextEmployeePage()" [disabled]="!hasNextEmployeePage()">
+                            <i class="fa-solid fa-chevron-right fs-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    @for (emp of visibleEmployees(); track emp.employeeId) {
+                    <div class="expense-row d-flex align-items-center justify-content-between px-4 py-3 gap-3">
+                        <div class="d-flex align-items-center gap-3" style="min-width:0; flex:1;">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center fs-xs fw-bold text-white flex-shrink-0"
+                                style="width:36px; height:36px; background: var(--primary);">
+                                {{ emp.initials }}
+                            </div>
+                            <div style="min-width:0;">
+                                <div class="fw-semibold fs-sm text-truncate text-dark">
+                                    {{ emp.name }}
+                                </div>
+                                <div class="fs-xs text-muted mt-1">
+                                    {{ emp.employeeId }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                            <div class="text-center">
+                                <div class="fs-xs fw-medium text-muted mb-1 text-uppercase" style="font-size: 10px;">
+                                    Pending
+                                </div>
+                                <span
+                                    class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"
+                                    style="min-width: 32px; font-size: 0.75rem;">
+                                    {{ emp.pending }}
+                                </span>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-xs fw-medium text-muted mb-1 text-uppercase" style="font-size: 10px;">
+                                    Approved
+                                </div>
+                                <span
+                                    class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1"
+                                    style="min-width: 32px; font-size: 0.75rem;">
+                                    {{ emp.approved }}
+                                </span>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-xs fw-medium text-muted mb-1 text-uppercase" style="font-size: 10px;">
+                                    Rejected
+                                </div>
+                                <span
+                                    class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"
+                                    style="min-width: 32px; font-size: 0.75rem;">
+                                    {{ emp.rejected }}
+                                </span>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-xs fw-medium text-muted mb-1 text-uppercase" style="font-size: 10px;">
+                                    Total
+                                </div>
+                                <span
+                                    class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"
+                                    style="min-width: 32px; font-size: 0.75rem;">
+                                    {{ emp.total }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                    @if (!visibleEmployees().length) {
+                    <div class="empty-state py-4">
+                        <i class="fa-solid fa-users text-muted fs-1 mb-3 opacity-50"></i>
+                        <p class="text-muted fs-sm">No employee data found.</p>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="card rounded-4 shadow-sm border-0 mb-2">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fs-sm fw-bold text-uppercase text-muted">All Expenses</h5>
+            <span class="text-muted fs-xs">
+                Showing {{ pagedBudgetExpenses.length }} of
+                {{ budgetReport()!.expenses.length }} records
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">TITLE</th>
+                            <th>MERCHANT NAME</th>
+                            <th>CATEGORY</th>
+                            <th class="text-end">AMOUNT</th>
+                            <th>STATUS</th>
+                            <th>SUBMITTED BY</th>
+                            <th>EMP ID</th>
+                            <th class="pe-4">DATE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (e of pagedBudgetExpenses; track $index) {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-semibold fs-sm">{{ e.title }}</div>
+                            </td>
+                            <td>
+                                <div class="fs-sm text-muted">
+                                    {{ e.merchantName || '-' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill fs-xs px-2 badge-category">{{ e.category
+                                    }}</span>
+                            </td>
+                            <td class="text-end fs-sm">{{ fmtAmt(e.amount) }}</td>
+                            <td>
+                                <span class="badge rounded-pill fs-xs px-2"
+                                    [class.badge-active]="e.status === 'Approved'"
+                                    [class.badge-closed]="e.status === 'Rejected'"
+                                    [class.badge-pending]="e.status === 'Pending'"
+                                    [class.badge-cancelled]="e.status === 'Cancelled'">
+                                    ● {{ e.status }}
+                                </span>
+                            </td>
+                            <td class="fs-sm text-muted">{{ e.submittedBy }}</td>
+                            <td>
+                                <code class="fs-xs">{{ e.submittedEmployeeId }}</code>
+                            </td>
+                            <td class="pe-4 fs-xs text-muted">{{ e.submittedDate | slice: 0 : 10 }}</td>
+                        </tr>
+                        }
+                        @if (!pagedBudgetExpenses.length) {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4 fs-sm">
+                                No expenses found for the selected page.
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-2 pb-2">
+        <app-pagination [currentPage]="budgetExpensePage()" [totalPages]="budgetExpenseTotalPages"
+            [totalRecords]="budgetReport()!.expenses.length" [pageSize]="budgetExpensePageSize()"
+            (pageChange)="onBudgetExpensePageChange($event)" (pageSizeChange)="onBudgetExpensePageSizeChange($event)" />
+    </div>
+    } @else {
+    <div class="empty-state py-5">
+        <div class="empty-icon mb-3">
+            <i class="fa-solid fa-wallet text-primary-brand" style="font-size: 4rem; opacity: 0.3;"></i>
+        </div>
+        <h5 class="text-muted">Enter a budget code to view details</h5>
+        <p class="text-muted fs-sm">Type a budget code above and click Generate</p>
+    </div>
+    }
+    }
+</div>

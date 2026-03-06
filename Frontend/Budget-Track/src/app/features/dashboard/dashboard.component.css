@@ -1,0 +1,44 @@
+/* Chart.js Canvas */
+.chart-canvas-area {
+    min-height: 300px;
+}
+
+/* Expense Row */
+.expense-row {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.expense-row:last-child {
+    border-bottom: none;
+}
+
+.expense-row:hover {
+    background: var(--bg-hover);
+}
+
+.expense-icon-circle {
+    width: 36px;
+    height: 36px;
+}
+
+/* Budget Row */
+.budget-row {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.budget-row:last-child {
+    border-bottom: none;
+}
+
+.budget-row:hover {
+    background: var(--bg-hover);
+}
+
+/* Bottom stat cards */
+.stat-card {
+    padding: 18px 20px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+}

@@ -1,0 +1,18 @@
+.expenses-page {
+    padding: 0;
+}
+
+.table th {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 1rem 0.75rem;
+    border-bottom-width: 1px;
+}
+
+.table td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}

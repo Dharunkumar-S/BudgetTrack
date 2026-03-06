@@ -1,0 +1,190 @@
+<div class="expenses-page">
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #e0e7ff;">
+                    <i class="fas fa-tag" style="color: #6366f1;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Categories</div>
+                    <div class="kpi-value">{{ categories().length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #dcfce7;">
+                    <i class="fas fa-check-circle" style="color: #16a34a;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Active</div>
+                    <div class="kpi-value">{{ activeCount() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #f1f5f9;">
+                    <i class="fas fa-times-circle" style="color: #64748b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Inactive</div>
+                    <div class="kpi-value">{{ inactiveCount() }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search + Filter -->
+    <div class="filter-bar mb-3">
+        <div class="search-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search categories..." [ngModel]="searchTerm()"
+                (ngModelChange)="searchTerm.set($event)">
+        </div>
+        <div class="filter-pills">
+            <button class="filter-pill" [class.active]="filterStatus() === 'all'"
+                (click)="filterStatus.set('all')">All</button>
+            <button class="filter-pill" [class.active]="filterStatus() === 'active'"
+                (click)="filterStatus.set('active')">Active</button>
+            <button class="filter-pill" [class.active]="filterStatus() === 'inactive'"
+                (click)="filterStatus.set('inactive')">Inactive</button>
+        </div>
+
+        @if (searchTerm() || filterStatus() !== 'all') {
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()"
+            style="height: 40px; border-radius: var(--border-radius);">
+            <i class="fas fa-times me-1"></i> Clear
+        </button>
+        }
+
+        @if (isAdmin()) {
+        <div class="ms-auto">
+            <button class="btn btn-primary btn-sm" style="height:38px;" (click)="openCreate()">
+                <i class="fas fa-plus me-1"></i> Add Category
+            </button>
+        </div>
+        }
+    </div>
+
+    <!-- Loading -->
+    @if (loading()) {
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+    } @else if (filtered().length === 0) {
+    <div class="empty-state">
+        <i class="fas fa-tags"></i>
+        <p>No Categories found.</p>
+    </div>
+    } @else {
+    <div class="item-grid">
+        @for (c of filtered(); track c.categoryID; let i = $index) {
+        <div class="item-card position-relative">
+            <!-- Edit/Delete top-right (Admin only) -->
+            @if (isAdmin()) {
+            <div class="position-absolute d-flex gap-1" style="top: 0.75rem; right: 0.75rem;">
+                <button class="btn-icon-action edit" (click)="openEdit(c)" title="Edit">
+                    <i class="fas fa-pen"></i>
+                </button>
+            </div>
+            }
+            <div class="item-card-icon" [class]="'ic-' + (i % 10)">
+                <i class="fas fa-tag"></i>
+            </div>
+            <div class="item-card-name">{{ c.categoryName }}</div>
+            <div class="item-card-footer">
+                <span class="code-badge" [class]="'cb-' + (i % 10)">{{ c.categoryCode }}</span>
+                <app-status-badge [status]="c.isActive ? 'Active' : 'Closed'"
+                    [label]="c.isActive ? 'Active' : 'Inactive'" />
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <app-confirm-modal modalId="deactivateCatModal" title="Deactivate Category"
+        message="This category is in use by expenses and cannot be deleted. Would you like to mark it as Inactive instead?"
+        confirmLabel="Deactivate Instead" confirmClass="btn-warning" (confirmed)="onDeactivate()" />
+
+    <!-- Form Modal -->
+    <div class="modal fade" id="catFormModal" tabindex="-1" aria-hidden="true" aria-labelledby="catFormModalTitle">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            @if (catForm) {
+            <div class="modal-content border-0 shadow-lg overflow-hidden rounded-4">
+
+                <!-- Centered Header -->
+                <div
+                    class="modal-header border-0 pb-2 pt-4 px-4 d-flex flex-column align-items-center text-center header-gradient">
+                    <div class="status-icon-wrap-sm mb-3 shadow-premium" style="background: #eef2ff; color: #4f46e5;">
+                        <i class="fas fa-tag fs-5"></i>
+                    </div>
+                    <h5 id="catFormModalTitle" class="modal-title fw-bold text-dark mb-0">{{ editMode() ? 'Edit
+                        Category' : 'New Category' }}</h5>
+                    <button class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <form [formGroup]="catForm!" (ngSubmit)="onSave()">
+                    <div class="modal-body px-4 py-3">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Category
+                                    Name <span class="text-danger">*</span></label>
+                                <input class="form-control modern-input-sm" formControlName="categoryName"
+                                    placeholder="e.g., Software & Tools"
+                                    [class.is-invalid]="f['categoryName']?.touched && f['categoryName']?.invalid">
+                                @if (f['categoryName']?.touched && f['categoryName']?.invalid) {
+                                <div class="invalid-feedback fs-xs d-block mt-1">Name is required.</div>
+                                }
+                            </div>
+
+                            @if (editMode()) {
+                            <div class="col-12">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Category
+                                    Code</label>
+                                <div class="form-control modern-input-sm d-flex align-items-center"
+                                    style="background:#f1f5f9; cursor:default;">
+                                    <span class="fw-bold fs-xs">{{ selected()?.categoryCode }}</span>
+                                </div>
+                            </div>
+                            }
+
+                            @if (editMode()) {
+                            <div class="col-12">
+                                <div
+                                    class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light-soft border">
+                                    <label class="form-label fs-xs fw-bold text-uppercase text-muted mb-0">Category
+                                        Status</label>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" formControlName="isActive"
+                                            id="catActive" role="switch">
+                                        <label class="form-check-label fs-xs fw-semibold ms-2" for="catActive">{{
+                                            f['isActive']?.value ? 'Active' : 'Inactive' }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 px-4 pb-4 pt-2">
+                        <div class="d-flex w-100 gap-2">
+                            <button class="btn btn-light-soft flex-fill py-2 fw-bold text-muted" type="button"
+                                data-bs-dismiss="modal" style="border-radius:12px;">Cancel</button>
+                            <button class="btn btn-primary-premium flex-fill py-2 fw-bold text-white shadow-sm"
+                                type="submit" [disabled]="saving() || (catForm!.invalid && catForm!.touched)">
+                                @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                                {{ editMode() ? 'Update Category' : 'Create Category' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            }
+        </div>
+    </div>
+</div>

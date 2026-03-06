@@ -1,0 +1,462 @@
+<div class="expenses-page">
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--primary-light);">
+                    <i class="fas fa-file-invoice-dollar" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Expenses</div>
+                    <div class="kpi-value">{{ stats().totalCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fas fa-clock" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Pending</div>
+                    <div class="kpi-value">{{ stats().pendingCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #ecfdf5;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Approved</div>
+                    <div class="kpi-value">{{ stats().approvedCount }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef2f2;">
+                    <i class="fas fa-times-circle" style="color: #dc2626;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Rejected</div>
+                    <div class="kpi-value">{{ stats().rejectedCount }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-3">
+        <!-- Search -->
+        <div class="search-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search title, merchant..." [(ngModel)]="searchQuery"
+                (ngModelChange)="onSearch()">
+        </div>
+
+        <!-- Member Search (Admin/Manager Only) -->
+        @if (!budgetId() && (authService.isAdmin() || authService.isManager())) {
+        @if (managedEmployees().length > 0) {
+        <div class="search-input-wrap" style="max-width: 240px;">
+            <select class="filter-select w-100" style="appearance: auto;" [(ngModel)]="filterEmployee"
+                (ngModelChange)="onSearch()">
+                <option value="">Filter by Member: All</option>
+                @for (emp of managedEmployees(); track emp.userId) {
+                <option [value]="emp.employeeId">
+                    {{ emp.firstName }} {{ emp.lastName }} ({{ emp.employeeId }})
+                </option>
+                }
+            </select>
+        </div>
+        } @else {
+        <div class="search-input-wrap" style="max-width: 200px;">
+            <i class="fas fa-user"></i>
+            <input type="text" placeholder="Member name..." [(ngModel)]="filterEmployee" (ngModelChange)="onSearch()">
+        </div>
+        }
+        }
+
+        <!-- Category Filter (Wrapped) -->
+        <div class="search-input-wrap" style="max-width: 200px;">
+            <select class="filter-select w-100" style="appearance: auto;" [(ngModel)]="filterCategoryId"
+                (ngModelChange)="onSearch()">
+                <option value="">Category: All</option>
+                @for (c of categories(); track c.categoryID) {
+                <option [value]="c.categoryID">{{ c.categoryName }}</option>
+                }
+            </select>
+        </div>
+
+        <!-- Status Filter -->
+        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="onSearch()">
+            <option value="">Status: All</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+
+
+        <!-- My Expenses Filter (Only for Employee role, hide from Admin/Manager) -->
+        @if (authService.isEmployee() && !authService.isManager() && !authService.isAdmin()) {
+        <div class="segmented-control ms-1">
+            <button type="button" class="segment-btn" [class.active]="!myExpensesOnly"
+                (click)="myExpensesOnly = false; onSearch()">
+                All
+            </button>
+            <button type="button" class="segment-btn" [class.active]="myExpensesOnly"
+                (click)="myExpensesOnly = true; onSearch()">
+                My Expense
+            </button>
+        </div>
+        }
+
+        @if (searchQuery || filterStatus || filterCategoryId || myExpensesOnly || filterEmployee) {
+        <button class="btn btn-light fs-xs text-muted px-3 border border-secondary-subtle"
+            style="height:38px; border-radius:10px;" (click)="clearFilters()">
+            <i class="fas fa-times me-1"></i> Clear
+        </button>
+        }
+
+        <!-- Add Expense (Moved into same div) -->
+        @if (canCreate()) {
+        <div class="ms-auto">
+            <button class="btn btn-primary fs-sm px-4" style="height: 40px; border-radius: 10px;"
+                (click)="openCreate()">
+                <i class="fas fa-plus me-2"></i>Add Expense
+            </button>
+        </div>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="bt-table-wrapper">
+        @if (loading()) {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        } @else if (accessDenied()) {
+        <div class="empty-state">
+            <i class="fas fa-lock"></i>
+            <p class="mb-0">You do not have access to this budget.</p>
+        </div>
+        } @else if (data().data.length === 0) {
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <p class="mb-0">No Expenses found.</p>
+        </div>
+        } @else {
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>TITLE</th>
+                        <th>MERCHANT</th>
+                        <th>CATEGORY</th>
+                        <th class="text-end">AMOUNT</th>
+                        <th>STATUS</th>
+                        <th>SUBMITTED BY</th>
+                        <th>DATE</th>
+                        @if (isManager()) { <th>ACTIONS</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (e of data().data; track e.expenseID) {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold fs-sm">{{ e.title }}</div>
+                            <div class="fs-xs text-muted" *ngIf="!budgetId()">{{ e.budgetTitle }} ({{ e.budgetCode }})
+                            </div>
+                            <div class="fs-xs text-muted" *ngIf="budgetId() && e.notes">{{ e.notes }}</div>
+                        </td>
+                        <td class="fs-sm text-muted">{{ e.merchantName }}</td>
+                        <td>
+                            <span class="badge rounded-pill fs-xs px-2"
+                                style="background:var(--primary-light); color:var(--primary);">
+                                {{ e.categoryName }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold text-dark fs-sm">{{ formatAmt(e.amount) }}</td>
+                        <td><app-status-badge [status]="e.statusName" [label]="e.statusName" /></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <app-user-avatar [firstName]="e.submittedByUserName.split(' ')[0]"
+                                    [lastName]="e.submittedByUserName.split(' ')[1] || ''" [size]="32" />
+                                <div class="lh-sm">
+                                    <div class="fs-sm fw-semibold text-dark">{{ e.submittedByUserName }}</div>
+                                    <div class="fs-xs text-muted">{{ e.submittedByEmployeeID
+                                        }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="fs-sm text-muted text-nowrap">
+                            {{ formatDate(e.submittedDate) }}
+                        </td>
+                        @if (isManager()) {
+                        <td>
+                            <div class="d-flex gap-1" *ngIf="e.status === 1">
+                                <button class="btn-icon-action approve" (click)="openApprove(e)" title="Approve">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn-icon-action reject" (click)="openReject(e)" title="Reject">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <span class="fs-xs text-muted" *ngIf="e.status !== 1">—</span>
+                        </td>
+                        }
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="px-3 py-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">
+            <app-pagination [currentPage]="currentPage" [totalPages]="data().totalPages"
+                [totalRecords]="data().totalRecords" [pageSize]="pageSize" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)" />
+        </div>
+        }
+    </div>
+
+    <!-- Create Expense Modal -->
+    <div class="modal fade" id="expenseFormModal" tabindex="-1" aria-hidden="true"
+        aria-labelledby="expenseFormModalTitle">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+            <div class="modal-content border-0 shadow-lg overflow-hidden rounded-4" *ngIf="expenseForm">
+
+                <!-- Centered Header -->
+                <div
+                    class="modal-header border-0 pb-2 pt-4 px-4 d-flex flex-column align-items-center text-center header-gradient">
+                    <div class="status-icon-wrap-sm mb-3 shadow-premium" style="background: #eef2ff; color: #4f46e5;">
+                        <i class="fas fa-file-invoice-dollar fs-5"></i>
+                    </div>
+                    <h5 id="expenseFormModalTitle" class="modal-title fw-bold text-dark mb-0">New Expense</h5>
+                    <button class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <form [formGroup]="expenseForm" (ngSubmit)="onSaveExpense()">
+                    <div class="modal-body px-4 py-3">
+                        <div class="row g-3">
+
+                            <!-- Separate Row for Budget -->
+                            <div class="col-12" *ngIf="!budgetId()">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Budget
+                                    <span class="text-danger">*</span></label>
+                                <div class="input-group-premium">
+                                    <select class="form-select modern-select-sm" formControlName="budgetId"
+                                        [class.is-invalid]="f?.['budgetId']?.touched && (f?.['budgetId']?.invalid || expenseForm.errors?.['budgetInactive'] || expenseForm.errors?.['budgetExpired'])">
+                                        <option [ngValue]="null" disabled>Select Budget...</option>
+                                        @for (b of budgets(); track b.budgetID) {
+                                        <option [ngValue]="b.budgetID">{{ b.code }} — {{ b.title }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                @if (f?.['budgetId']?.touched && (f?.['budgetId']?.invalid ||
+                                expenseForm.errors?.['budgetInactive'] || expenseForm.errors?.['budgetExpired'])) {
+                                <div class="invalid-feedback fs-xs d-block mt-1">
+                                    @if (f?.['budgetId']?.errors?.['required']) { <span>Budget is required.</span> }
+                                    @if (expenseForm.errors?.['budgetInactive']) { <span>Selected budget is
+                                        inactive.</span> }
+                                    @if (expenseForm.errors?.['budgetExpired']) { <span>Selected budget has
+                                        expired.</span> }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Separate Row for Category -->
+                            <div class="col-12">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Category
+                                    <span class="text-danger">*</span></label>
+                                <div class="input-group-premium">
+                                    <select class="form-select modern-select-sm" formControlName="categoryId"
+                                        [class.is-invalid]="f?.['categoryId']?.touched && (f?.['categoryId']?.invalid || expenseForm.errors?.['categoryInactive'])">
+                                        <option [ngValue]="null">Select Category...</option>
+                                        @for (c of categories(); track c.categoryID) {
+                                        <option [ngValue]="c.categoryID">{{ c.categoryName }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                @if (f?.['categoryId']?.touched && (f?.['categoryId']?.invalid ||
+                                expenseForm.errors?.['categoryInactive'])) {
+                                <div class="invalid-feedback fs-xs d-block mt-1">
+                                    @if (f?.['categoryId']?.errors?.['required']) { <span>Category is required.</span> }
+                                    @if (expenseForm.errors?.['categoryInactive']) { <span>Selected category is
+                                        inactive.</span> }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Title Full Width but compact -->
+                            <div class="col-12">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Title
+                                    <span class="text-danger">*</span></label>
+                                <input class="form-control modern-input-sm" formControlName="title"
+                                    [class.is-invalid]="f?.['title']?.touched && f?.['title']?.invalid">
+                                @if (f?.['title']?.touched && f?.['title']?.invalid) {
+                                <div class="invalid-feedback fs-xs d-block mt-1">
+                                    @if (f?.['title']?.errors?.['required']) { <span>Title is required.</span> }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Grouped Row 2 -->
+                            <div class="col-md-6">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Amount
+                                    (₹) <span class="text-danger">*</span></label>
+                                <div class="input-group-premium">
+                                    <span class="input-group-text-sm"
+                                        [class.text-danger]="f?.['amount']?.touched && f?.['amount']?.invalid">₹</span>
+                                    <input type="number" class="form-control modern-input-sm ps-4"
+                                        [class.is-invalid]="f?.['amount']?.touched && f?.['amount']?.invalid"
+                                        formControlName="amount" min="1">
+                                </div>
+                                @if (f?.['amount']?.touched && f?.['amount']?.invalid) {
+                                <div class="invalid-feedback fs-xs d-block mt-1">
+                                    @if (f?.['amount']?.errors?.['required']) { <span>Amount is required.</span> }
+                                    @if (f?.['amount']?.errors?.['min']) { <span>Amount must be greater than
+                                        zero.</span> }
+                                </div>
+                                }
+                            </div>
+
+                            <div class="col-6">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Merchant</label>
+                                <input class="form-control modern-input-sm" formControlName="merchantName">
+                            </div>
+
+                            <div class="col-12">
+                                <label
+                                    class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-1">Notes</label>
+                                <textarea class="form-control modern-textarea-sm" formControlName="notes"
+                                    rows="1"></textarea>
+                            </div>
+                        </div>
+
+                        @if (formError()) {
+                        <div class="alert alert-danger-soft mt-2 mb-0 fs-xs py-2 d-flex align-items-center">
+                            <i class="fas fa-exclamation-circle me-2"></i> {{ formError() }}
+                        </div>
+                        }
+                    </div>
+
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <div class="d-flex w-100 gap-2">
+                            <button class="btn btn-light-soft flex-fill py-2 fw-bold text-muted" type="button"
+                                data-bs-dismiss="modal" style="border-radius:12px;">Cancel</button>
+                            <button class="btn btn-primary-premium flex-fill py-2 fw-bold text-white shadow-sm"
+                                type="submit" [disabled]="saving() || (expenseForm!.invalid && expenseForm!.touched)">
+                                @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                                Submit Expense
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve/Reject Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true" aria-labelledby="statusModalTitle">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+            @if (statusForm) {
+            <div class="modal-content border-0 shadow-lg overflow-hidden rounded-4">
+
+                <!-- Refined Approval Header -->
+                <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex flex-column align-items-center text-center"
+                    [class.header-gradient-success]="approvalAction() === 'approve'"
+                    [class.header-gradient-danger]="approvalAction() === 'reject'">
+                    <div class="status-icon-wrap mb-3 shadow-premium" [class.approve]="approvalAction() === 'approve'"
+                        [class.reject]="approvalAction() === 'reject'">
+                        <i class="fas" [class.fa-check]="approvalAction() === 'approve'"
+                            [class.fa-times]="approvalAction() === 'reject'"></i>
+                    </div>
+                    <h4 id="statusModalTitle" class="modal-title fw-bold text-dark mb-1">
+                        {{ approvalAction() === 'approve' ? 'Approve Expense' : 'Reject Expense' }}
+                    </h4>
+                    <p class="text-muted fs-xs px-4 opacity-75">
+                        Confirm the details below to complete the workflow.
+                    </p>
+                    <button class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <form [formGroup]="statusForm!" (ngSubmit)="onUpdateStatus()">
+                    <div class="modal-body px-4 py-3">
+
+                        <!-- Expense Info Memo -->
+                        <div class="expense-memo-card mb-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="memo-title fw-bold text-dark fs-sm">{{ selectedExpense()?.title }}</div>
+                                <div class="memo-amt fw-bold text-primary">{{ formatAmt(selectedExpense()?.amount ?? 0)
+                                    }}</div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <span class="badge rounded-pill bg-light text-muted border fs-xs fw-medium px-2">{{
+                                    selectedExpense()?.categoryName }}</span>
+                                <span class="text-muted fs-xs opacity-75">•</span>
+                                <span class="text-muted fs-xs fw-medium">{{ selectedExpense()?.submittedByUserName
+                                    }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Inputs -->
+                        @if (approvalAction() === 'approve') {
+                        @if (approvalBudgetOverrun()) {
+                        <div class="d-flex gap-2 align-items-start mb-3 px-3 py-2 rounded-3"
+                            style="background:#fffbeb; border:1px solid #fcd34d;">
+                            <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"
+                                style="color:#d97706; font-size:0.85rem;"></i>
+                            <div class="lh-base" style="font-size:0.78rem; color:#92400e;">
+                                <strong>Over-budget warning:</strong> This expense ({{
+                                formatAmt(selectedExpense()!.amount) }}) exceeds the remaining budget of <strong>{{
+                                    formatAmt(approvalBudgetOverrun()!.remaining) }}</strong> by <strong
+                                    class="text-danger">{{ formatAmt(approvalBudgetOverrun()!.excess) }}</strong>.
+                                Approving will result in an over-budget allocation.
+                            </div>
+                        </div>
+                        }
+                        <div class="form-section transition-fade">
+                            <label
+                                class="form-label fs-xs fw-bold text-uppercase text-muted letter-spacing-1 mb-2">Approval
+                                Comments (Optional)</label>
+                            <textarea class="form-control modern-textarea" formControlName="comments"
+                                rows="3"></textarea>
+                        </div>
+                        }
+
+                        @if (approvalAction() === 'reject') {
+                        <div class="form-section transition-fade">
+                            <label
+                                class="form-label fs-xs fw-bold text-uppercase text-danger letter-spacing-1 mb-2">Rejection
+                                Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control modern-textarea border-danger-soft" formControlName="reason"
+                                rows="3"></textarea>
+                        </div>
+                        }
+                    </div>
+
+                    <div class="modal-footer border-0 px-4 pb-4 pt-2">
+                        <button class="btn btn-light-soft w-100 py-2 fw-bold text-muted mb-2" type="button"
+                            data-bs-dismiss="modal" style="border-radius:12px;">Cancel</button>
+                        <button class="btn w-100 py-2.5 fw-bold text-white shadow-sm action-confirm-btn" type="submit"
+                            [disabled]="saving()" [class.btn-success-premium]="approvalAction() === 'approve'"
+                            [class.btn-danger-premium]="approvalAction() === 'reject'">
+                            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                            {{ approvalAction() === 'approve' ? 'Confirm Approval' : 'Confirm Rejection' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            }
+        </div>
+    </div>
+
+</div>

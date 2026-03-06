@@ -1,0 +1,42 @@
+<div class="pagination-wrapper d-flex align-items-center justify-content-between gap-3 flex-wrap">
+    <!-- Left: Rows per page -->
+    <div class="d-flex align-items-center gap-2">
+        <span class="pg-label">Rows per page:</span>
+        <select class="pg-select" [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+            <option [ngValue]="7">7</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="15">15</option>
+            <option [ngValue]="25">25</option>
+        </select>
+        <span class="pg-label ms-3">Showing {{ firstItem }}–{{ lastItem }} of {{ totalRecords
+            }}</span>
+    </div>
+
+    <!-- Center: Page controls -->
+    @if (totalPages > 1) {
+    <nav class="d-flex align-items-center gap-1">
+        <button class="pg-btn" [disabled]="currentPage === 1" (click)="onPage(1)" title="First">
+            <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button class="pg-btn" [disabled]="currentPage === 1" (click)="onPage(currentPage - 1)" title="Previous">
+            <i class="fas fa-angle-left"></i>
+        </button>
+
+        @for (page of pageNumbers; track page) {
+        <button class="pg-btn" [class.active]="page === currentPage" (click)="onPage(page)">{{ page }}</button>
+        }
+
+        <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="onPage(currentPage + 1)" title="Next">
+            <i class="fas fa-angle-right"></i>
+        </button>
+        <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="onPage(totalPages)" title="Last">
+            <i class="fas fa-angle-double-right"></i>
+        </button>
+    </nav>
+    }
+
+    <!-- Right: Page X of Y -->
+    <span class="pg-label page-of text-end">
+        Page {{ currentPage }} of {{ totalPages }}
+    </span>
+</div>

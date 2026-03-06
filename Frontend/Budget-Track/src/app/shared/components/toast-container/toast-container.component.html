@@ -1,0 +1,9 @@
+<div class="toast-container-fixed">
+    @for (toast of toastService.toasts(); track toast.id) {
+    <div class="toast-item d-flex align-items-start gap-3 p-3 shadow-sm" [ngClass]="getClass(toast)" role="alert">
+        <i [class]="getIcon(toast)" class="flex-shrink-0 mt-1"></i>
+        <span class="flex-grow-1 fs-sm">{{ toast.message }}</span>
+        <button class="btn-close btn-close-sm flex-shrink-0" (click)="toastService.dismiss(toast.id)"></button>
+    </div>
+    }
+</div>

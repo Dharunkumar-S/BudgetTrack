@@ -1,0 +1,163 @@
+<div class="notifications-page">
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--primary-light);">
+                    <i class="fas fa-bell" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Notifications</div>
+                    <div class="kpi-value">{{ data().totalRecords }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #d1fae5;">
+                    <i class="fas fa-check-circle" style="color: #059669;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Read</div>
+                    <div class="kpi-value">{{ readCount() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fas fa-envelope" style="color: #d97706;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Unread</div>
+                    <div class="kpi-value">{{ unreadCount() }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-3">
+        <!-- Search -->
+        <div class="search-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search notifications..." [ngModel]="searchTerm()"
+                (ngModelChange)="onSearchChange($event)">
+        </div>
+
+        <!-- Status Filter Segmented Control -->
+        <div class="segmented-control">
+            <button class="segment-btn" [class.active]="statusFilter() === 'all'"
+                (click)="setStatusFilter('all')">All</button>
+            <button class="segment-btn" [class.active]="statusFilter() === 'read'"
+                (click)="setStatusFilter('read')">Read</button>
+            <button class="segment-btn" [class.active]="statusFilter() === 'unread'"
+                (click)="setStatusFilter('unread')">Unread</button>
+        </div>
+
+        @if (searchTerm() || statusFilter() !== 'all') {
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()"
+            style="height: 40px; border-radius: var(--border-radius);">
+            <i class="fas fa-times me-1"></i> Clear
+        </button>
+        }
+
+        <div class="ms-sm-auto d-flex gap-2">
+            <button class="btn btn-primary fs-sm mark-all-btn-h fw-semibold" data-bs-toggle="modal"
+                data-bs-target="#confirmMarkAllModal" [disabled]="markingAll() || deletingAll()"
+                style="min-width: 110px; border-radius: 10px; padding: 0 1.4rem;">
+                @if (markingAll()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Mark All
+            </button>
+            <button class="btn btn-danger fs-sm mark-all-btn-h fw-semibold" data-bs-toggle="modal"
+                data-bs-target="#confirmDeleteAllModal" [disabled]="markingAll() || deletingAll()"
+                style="min-width: 110px; border-radius: 10px; padding: 0 1.4rem;">
+                @if (deletingAll()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Delete All
+            </button>
+        </div>
+    </div>
+
+    <div class="bt-table-wrapper">
+        @if (loading()) {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        } @else if (data().data.length === 0) {
+        <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <p>No Notifications found.</p>
+        </div>
+        } @else {
+        <div class="d-flex flex-column">
+            @for (n of data().data; track n.notificationID) {
+            <div class="notif-item-h" [class.notif-unread-h]="!n.isRead">
+
+                <!-- Icon -->
+                <div class="notif-icon-wrap-h d-flex align-items-center justify-content-center flex-shrink-0 fs-6"
+                    [style.background]="getIconBg(n.type)">
+                    <i [class]="getIcon(n.type)" [style.color]="getIconColor(n.type)"></i>
+                </div>
+
+                <!-- Content -->
+                <div class="notif-body-h">
+                    <div class="notif-message-h fs-sm d-flex align-items-center flex-wrap gap-2">
+                        {{ n.message }}
+                        <span
+                            class="notif-status-h d-inline-flex align-items-center gap-1 fw-bold text-uppercase rounded-pill"
+                            [class.status-read-h]="n.isRead" [class.status-unread-h]="!n.isRead">
+                            ● {{ n.isRead ? 'Read' : 'Unread' }}
+                        </span>
+                    </div>
+                    <div class="notif-meta-h d-flex align-items-center flex-wrap">
+                        <span class="notif-time-h">
+                            <i class="fas fa-clock me-1 fs-xs"></i>
+                            {{ timeAgo(n.createdDate) }}
+                        </span>
+                        @if (n.senderName) {
+                        <span class="notif-sender-h d-inline-flex align-items-center gap-1">
+                            <i class="fas fa-user-circle fs-sm text-muted"></i>
+                            {{ n.senderName }}
+                        </span>
+                        }
+                        <span class="notif-timestamp-h">
+                            <i class="fas fa-calendar me-1 fs-xs"></i>
+                            {{ formatDateTime(n.createdDate) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button class="notif-btn-read-h" title="Mark as read"
+                        [style.visibility]="n.isRead ? 'hidden' : 'visible'" (click)="markRead(n.notificationID, n)">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                    <button class="notif-btn-delete-h" title="Delete notification"
+                        (click)="deleteNotification(n.notificationID)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+            }
+        </div>
+        <div class="px-4 py-2 border-top" style="border-color: var(--border-color) !important;">
+            <app-pagination [currentPage]="currentPage" [totalPages]="data().totalPages"
+                [totalRecords]="data().totalRecords" [pageSize]="pageSize" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)" />
+        </div>
+        }
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <app-confirm-modal modalId="confirmDeleteAllModal" title="Delete All Notifications"
+        message="Are you sure you want to delete ALL notifications? This action cannot be undone."
+        confirmLabel="Delete All" confirmClass="btn-danger" (confirmed)="deleteAll()" />
+
+    <!-- Mark All Read Confirm Modal -->
+    <app-confirm-modal modalId="confirmMarkAllModal" title="Mark All as Read"
+        message="Are you sure you want to mark all notifications as read?" confirmLabel="Mark All"
+        confirmClass="btn-primary" (confirmed)="markAll()" />
+</div>

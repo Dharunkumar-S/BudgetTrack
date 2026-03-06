@@ -1,0 +1,24 @@
+﻿<div class="modal fade" [id]="modalId" tabindex="-1" [attr.aria-labelledby]="modalId + 'Label'" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3">
+            <div class="modal-header justify-content-center position-relative border-0">
+                <h5 class="modal-title fw-bold" [id]="modalId + 'Label'">{{ title }}</h5>
+                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center text-muted">
+                <p class="mb-0">{{ message }}</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    style="border-radius: var(--border-radius); min-width: 100px;">
+                    Cancel
+                </button>
+                <button type="button" class="btn" [ngClass]="confirmClass" (click)="onConfirm()"
+                    style="border-radius: var(--border-radius); min-width: 100px;">
+                    {{ confirmLabel }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

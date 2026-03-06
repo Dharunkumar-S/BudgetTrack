@@ -1,0 +1,145 @@
+<div class="audits-page">
+
+    <!-- KPI Cards -->
+    <div class="kpi-row mb-3">
+        <!-- Total Logs always first -->
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--primary-light); color:var(--primary);">
+                <i class="fas fa-history"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Total Logs</div>
+                <div class="kpi-value">{{ data().totalRecords }}</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--success-bg); color:var(--success);">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Creates</div>
+                <div class="kpi-value">{{ createCount() }}</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--primary-light); color:var(--primary);">
+                <i class="fas fa-pen"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Updates</div>
+                <div class="kpi-value">{{ updateCount() }}</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--danger-bg); color:var(--danger);">
+                <i class="fas fa-trash"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Deletes</div>
+                <div class="kpi-value">{{ deleteCount() }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-2">
+
+        <!-- Search by Employee ID / Name -->
+        <div class="input-group" style="max-width:260px;">
+            <span class="input-group-text bg-transparent border-end-0 pe-1">
+                <i class="fas fa-search text-muted fs-xs"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-1 fs-sm" placeholder="Search Employee ID or Name…"
+                [(ngModel)]="searchQuery" (ngModelChange)="onSearch()">
+        </div>
+
+        <!-- Action filter -->
+        <select class="filter-select" [(ngModel)]="filterAction" (ngModelChange)="onSearch()">
+            <option value="">All Actions</option>
+            <option value="Create">Create</option>
+            <option value="Update">Update</option>
+            <option value="Delete">Delete</option>
+        </select>
+
+        <!-- Module (entityType) filter -->
+        <select class="filter-select" [(ngModel)]="filterModule" (ngModelChange)="onSearch()">
+            <option value="">All Modules</option>
+            <option value="Budget">Budget</option>
+            <option value="Expense">Expense</option>
+            <option value="Category">Category</option>
+            <option value="Department">Department</option>
+        </select>
+
+        <!-- Clear -->
+        @if (searchQuery || filterAction || filterModule) {
+        <button class="btn btn-outline-secondary btn-sm filter-btn text-nowrap" (click)="clearFilters()">
+            <i class="fas fa-times me-1"></i>Clear
+        </button>
+        }
+    </div>
+
+
+    <!-- Table -->
+    <div class="bt-table-wrapper">
+        @if (loading()) {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        } @else if (data().data.length === 0) {
+        <div class="empty-state"><i class="fas fa-history"></i>
+            <p>No Audits found.</p>
+        </div>
+        } @else {
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>TIMESTAMP</th>
+                        <th>USER</th>
+                        <th>EMPLOYEE ID</th>
+                        <th>ACTION</th>
+                        <th>MODULE</th>
+                        <th>DETAILS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (log of data().data; track log.auditLogID) {
+                    <tr>
+                        <td class="text-nowrap">
+                            <div class="fs-xs text-muted">{{ formatDate(log.timestamp) }}</div>
+                            <div class="fs-xs text-muted opacity-75">{{ formatTime(log.timestamp) }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <app-user-avatar [firstName]="log.userName.split(' ')[0]"
+                                    [lastName]="log.userName.split(' ')[1] || ''" [size]="28" />
+                                <span class="fw-semibold fs-sm">{{ log.userName }}</span>
+                            </div>
+                        </td>
+                        <td><code class="fs-xs">{{ log.employeeId ?? '—' }}</code></td>
+                        <td>
+                            <span class="action-badge" [class]="log.action.toLowerCase()">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill fs-xs px-2 fw-medium badge-muted">
+                                {{ log.entityType }}
+                            </span>
+                        </td>
+                        <td class="fs-xs text-muted text-truncate" style="min-width:420px;max-width:560px;">
+                            {{ log.notes }}
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="px-3 py-1 border-top" style="border-color: rgba(0,0,0,0.06) !important;">
+            <app-pagination [currentPage]="currentPage" [totalPages]="data().totalPages"
+                [totalRecords]="data().totalRecords" [pageSize]="pageSize" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)" />
+        </div>
+        }
+    </div>
+</div>

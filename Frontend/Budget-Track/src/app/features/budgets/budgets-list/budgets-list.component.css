@@ -1,0 +1,106 @@
+/* Filter Select — min-width override for budget dropdowns */
+.filter-select {
+    min-width: 140px;
+}
+
+/* Budget Modal Styles */
+.bm-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.02em;
+}
+
+.bm-input {
+    width: 100%;
+    height: 38px;
+    padding: 0 0.875rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 0.85rem;
+    color: #1e293b;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.bm-input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.bm-input-error {
+    border-color: #ef4444 !important;
+    background: #fff5f5 !important;
+}
+
+.bm-input-error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+}
+
+.bm-error-msg {
+    font-size: 0.72rem;
+    color: #ef4444;
+    margin-top: 0.25rem;
+}
+
+.bm-input-icon-wrap {
+    position: relative;
+}
+
+.bm-prefix {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.bm-input-prefixed {
+    padding-left: 1.75rem;
+}
+
+/* Status Toggle */
+.bm-status-toggle {
+    display: flex;
+    gap: 0.5rem;
+    padding: 4px;
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.bm-status-btn {
+    flex: 1;
+    padding: 0.4rem 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bm-status-btn:hover {
+    color: #475569;
+}
+
+.active-status {
+    background: #fff !important;
+    color: #16a34a !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.closed-status {
+    background: #fff !important;
+    color: #dc2626 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}

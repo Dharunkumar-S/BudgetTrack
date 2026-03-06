@@ -1,0 +1,76 @@
+<div class="login-page d-flex align-items-center justify-content-center min-vh-100">
+    <div class="login-wrapper">
+
+        <!-- Brand header -->
+        <div class="text-center mb-4">
+            <div class="brand-logo mx-auto mb-3">
+                <img src="favicon.svg" alt="BudgetTrack" width="72" height="72">
+            </div>
+            <h1 class="fw-bold mb-1 text-white" style="font-size: 1.75rem;">BudgetTrack</h1>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+            <div class="p-4 pt-5 pb-3 d-flex flex-column align-items-center">
+                <h2 class="mb-1 fw-semibold text-center fs-5 text-dark">Welcome back</h2>
+                <p class="text-center mb-4 fs-xs text-muted">Sign in to your account</p>
+
+                <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="w-100">
+
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <label for="loginEmail" class="form-label fw-semibold fs-sm text-secondary">Email
+                            Address</label>
+                        <div class="position-relative d-flex align-items-center">
+                            <i class="fas fa-envelope login-input-icon"></i>
+                            <input id="loginEmail" type="email" name="email" class="login-input" formControlName="email"
+                                [class.input-error]="emailInvalid" autocomplete="username">
+                        </div>
+                        <div class="invalid-feedback d-block fs-xs mt-1" *ngIf="emailInvalid">
+                            @if (loginForm.get('email')?.errors?.['required']) { Email is required. }
+                            @else if (loginForm.get('email')?.errors?.['email'] ||
+                            loginForm.get('email')?.errors?.['pattern']) { Must be a valid @budgettrack.com address. }
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-5">
+                        <label for="loginPassword" class="form-label fw-semibold fs-sm text-secondary">Password</label>
+                        <div class="position-relative d-flex align-items-center">
+                            <i class="fas fa-lock login-input-icon"></i>
+                            <input id="loginPassword" name="password" [type]="showPassword() ? 'text' : 'password'"
+                                class="login-input" formControlName="password" [class.input-error]="passwordInvalid"
+                                autocomplete="current-password">
+                            <button type="button" class="login-eye-btn" (click)="showPassword.set(!showPassword())"
+                                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                                <i [class]="showPassword() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback d-block fs-xs mt-1" *ngIf="passwordInvalid">
+                            Password is required.
+                        </div>
+                    </div>
+
+                    <!-- Error alert -->
+                    <div class="alert alert-danger d-flex align-items-center py-2 px-3 fs-sm mb-3" *ngIf="errorMsg()">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span>{{ errorMsg() }}</span>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="mt-3">
+                        <button type="submit" class="login-btn w-100" [disabled]="loading()">
+                            @if (loading()) {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            Signing in...
+                            } @else {
+                            Login
+                            }
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

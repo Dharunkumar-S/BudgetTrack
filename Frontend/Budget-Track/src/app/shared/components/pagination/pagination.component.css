@@ -1,0 +1,80 @@
+.pagination-wrapper {
+    padding: 0.35rem 0;
+    min-height: 40px;
+}
+
+
+
+.pg-label {
+    font-size: 0.8rem;
+    color: var(--text-muted, #6c757d);
+    white-space: nowrap;
+}
+
+.pg-select {
+    appearance: auto;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--border-radius, 8px);
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #1e293b);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    height: 30px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.pg-select:focus {
+    border-color: var(--primary, #2563eb);
+}
+
+
+
+.pg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 0.5rem;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--border-radius, 8px);
+    background: var(--bg-card, #fff);
+    color: var(--text-secondary, #64748b);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pg-btn:hover:not(:disabled):not(.active) {
+    background: var(--bg-muted, #f1f5f9);
+    border-color: var(--primary, #2563eb);
+    color: var(--primary, #2563eb);
+}
+
+.pg-btn.active {
+    background: var(--primary, #2563eb);
+    border-color: var(--primary, #2563eb);
+    color: #fff;
+}
+
+.pg-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pg-btn:focus-visible {
+    outline: 3px solid var(--primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.pg-select:focus-visible {
+    outline: 3px solid var(--primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.page-of {
+    min-width: 80px;
+}

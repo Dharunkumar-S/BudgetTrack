@@ -1,0 +1,50 @@
+.toast-item {
+    border-radius: 8px;
+    background: white;
+    border-left: 4px solid;
+    animation: slideIn 0.2s ease;
+}
+
+.toast-success {
+    border-color: var(--success);
+}
+
+.toast-error {
+    border-color: var(--danger);
+}
+
+.toast-warning {
+    border-color: var(--warning);
+}
+
+.toast-info {
+    border-color: var(--info);
+}
+
+.toast-success i {
+    color: var(--success);
+}
+
+.toast-error i {
+    color: var(--danger);
+}
+
+.toast-warning i {
+    color: var(--warning);
+}
+
+.toast-info i {
+    color: var(--info);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

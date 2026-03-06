@@ -1,0 +1,278 @@
+/* ── Critical: Remove padding from main content shell ── */
+:host ::ng-deep #main-content {
+    padding: 0 !important;
+}
+
+/* ── Layout ── */
+.reports-dashboard {
+    padding: 0 1.5rem 1.5rem;
+    background: var(--bg-app);
+    min-height: calc(100vh - 64px);
+}
+
+
+/* segmented-control and segment-btn are defined globally in styles.css */
+
+.skeleton-section,
+.reports-dashboard>.card,
+.reports-dashboard>.row,
+.reports-dashboard>.empty-state {
+    margin-bottom: 1.5rem;
+}
+
+/* kpi-card, kpi-icon, kpi-label, kpi-value are defined globally in styles.css */
+/* kpi-card-blue/purple/green/orange color variants are local to this component */
+
+.kpi-card-blue .kpi-icon {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.kpi-card-purple .kpi-icon {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.kpi-card-green .kpi-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.kpi-card-orange .kpi-icon {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.kpi-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* kpi-label and kpi-value are defined globally in styles.css */
+
+/* ── Charts ── */
+.chart-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    padding-bottom: 8px;
+}
+
+.chart-scroll-wrapper::-webkit-scrollbar {
+    height: 5px;
+}
+
+.chart-scroll-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chart-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.period-chart-container {
+    height: 400px;
+}
+
+/* ── Tables ── */
+.table thead th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 0.65rem 0.85rem;
+    background: var(--bg-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody td {
+    padding: 0.7rem 0.85rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+/* ── Utilization Bar ── */
+.utilization-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-color);
+    overflow: hidden;
+}
+
+.utilization-bar .fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.utilization-bar .fill.low {
+    background: var(--success);
+}
+
+.utilization-bar .fill.medium {
+    background: var(--warning);
+}
+
+.utilization-bar .fill.high {
+    background: var(--danger);
+}
+
+/* ── Empty State ── */
+.empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+}
+
+.empty-icon i {
+    font-size: 5rem;
+    opacity: 0.2;
+}
+
+/* ── Skeleton Loaders ── */
+.skeleton-text,
+.skeleton-pill,
+.skeleton-chart {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 40%, #e2e8f0 80%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 999px;
+}
+
+.skeleton-text {
+    height: 10px;
+    border-radius: 999px;
+}
+
+.skeleton-text-xs {
+    height: 8px;
+}
+
+.skeleton-text-sm {
+    height: 10px;
+}
+
+.skeleton-text-lg {
+    height: 18px;
+}
+
+.skeleton-pill {
+    border-radius: 999px;
+}
+
+.skeleton-chart {
+    height: 220px;
+    border-radius: 16px;
+}
+
+.skeleton-badge {
+    width: 64px;
+    height: 20px;
+}
+
+.skeleton-text.w-25 {
+    width: 25%;
+}
+
+.skeleton-text.w-50 {
+    width: 50%;
+}
+
+.skeleton-text.w-75 {
+    width: 75%;
+}
+
+/* ── Expense Rows ── */
+.expense-row {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.expense-row:last-child {
+    border-bottom: none;
+}
+
+.expense-row:hover {
+    background: var(--bg-muted);
+}
+
+.chart-canvas-area canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ── Legend Dots ── */
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.legend-dot-approved {
+    background-color: #16a34a;
+}
+
+.legend-dot-pending {
+    background-color: #f59e0b;
+}
+
+.legend-dot-rejected {
+    background-color: #ef4444;
+}
+
+/* ── Animations ── */
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .reports-dashboard {
+        padding: 0.75rem;
+    }
+
+    .kpi-value {
+        font-size: 1.2rem;
+    }
+
+    .kpi-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+    }
+
+    .chart-container {
+        height: 260px;
+    }
+}

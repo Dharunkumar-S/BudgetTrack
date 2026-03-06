@@ -1,0 +1,51 @@
+<aside class="sidebar d-flex flex-column" [class.collapsed]="collapsed">
+    <!-- Logo / Brand -->
+    <div class="sidebar-brand d-flex align-items-center px-3 py-3" [class.justify-content-center]="collapsed">
+        <div class="brand-icon d-flex align-items-center justify-content-center flex-shrink-0"
+            [class.me-2]="!collapsed">
+            <img src="favicon.svg" alt="BudgetTrack" width="36" height="36">
+        </div>
+        @if (!collapsed) {
+        <span class="brand-text fw-bold text-white">BudgetTrack</span>
+        }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav flex-grow-1 px-2 py-2" aria-label="Main navigation">
+        @for (item of visibleNavItems(); track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="active" #rla="routerLinkActive"
+            [routerLinkActiveOptions]="{ exact: false }" [attr.aria-current]="rla.isActive ? 'page' : null"
+            class="nav-item d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none"
+            [title]="collapsed ? item.label : ''">
+            <span class="position-relative flex-shrink-0">
+                <i [class]="item.icon" class="nav-icon text-center" aria-hidden="true"></i>
+                @if (item.route === '/notifications' && unreadCount() > 0 && collapsed) {
+                <span class="nav-badge nav-badge-dot"></span>
+                }
+            </span>
+            @if (!collapsed) {
+            <span class="nav-label fw-medium text-nowrap ms-3">{{ item.label }}</span>
+            @if (item.route === '/notifications' && unreadCount() > 0) {
+            <span class="nav-badge nav-badge-inline ms-auto">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+            }
+            }
+        </a>
+        }
+    </nav>
+
+    <!-- User profile footer -->
+    <div class="sidebar-footer px-3 py-3 border-top sidebar-border-top">
+        <div class="d-flex align-items-center">
+            <div
+                class="user-avatar rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0 text-white fw-semibold">
+                {{ userInitials() }}
+            </div>
+            @if (!collapsed) {
+            <div class="overflow-hidden">
+                <div class="user-name text-white fw-semibold fs-sm text-truncate">{{ userName() }}</div>
+                <div class="user-role fs-xs sidebar-text">{{ userRole() }}</div>
+            </div>
+            }
+        </div>
+    </div>
+</aside>

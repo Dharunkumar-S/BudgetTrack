@@ -1,0 +1,271 @@
+<div class="dashboard-page">
+    <!-- KPI Cards Row -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--primary-light);">
+                    <i class="fa-solid fa-wallet" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Active Budgets</div>
+                    <div class="kpi-value">{{ activeBudgets() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #ecfdf5;">
+                    <i class="fa-solid fa-coins" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Allocated</div>
+                    <div class="kpi-value">{{ fmtShort(totalAllocated()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fa-solid fa-chart-line" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-value">{{ fmtShort(totalSpent()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #e0f2fe;">
+                    <i class="fa-solid fa-hand-holding-dollar" style="color: #0ea5e9;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Remaining</div>
+                    <div class="kpi-value">{{ fmtShort(totalRemaining()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                    <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Avg. Utilization</div>
+                    <div class="kpi-value">{{ avgUtilization() }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fce7f3;">
+                    <i class="fa-solid fa-receipt" style="color: #ec4899;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Expenses</div>
+                    <div class="kpi-value">{{ totalExpenseCount() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: var(--warning-bg);">
+                    <i class="fa-solid fa-clock" style="color: var(--warning);"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Pending Expenses</div>
+                    <div class="kpi-value">{{ pendingExpenseCount() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #ecfdf5;">
+                    <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Approved Expenses</div>
+                    <div class="kpi-value">{{ approvedExpenseCount() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef2f2;">
+                    <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Rejected Expenses</div>
+                    <div class="kpi-value">{{ rejectedExpenseCount() }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+        <!-- Budget vs Actual Spend Bar Chart -->
+        <div class="col-lg-7">
+            <div class="bt-table-wrapper h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="h6 mb-0 fw-bold">Budget</h2>
+                </div>
+                <div class="chart-canvas-area position-relative px-4 py-3" style="flex: 1; min-height: 0;">
+                    @if (loading()) {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading chart…</span>
+                        </div>
+                    </div>
+                    } @else {
+                    <canvas #barCanvas role="img"
+                        aria-label="Bar chart comparing budget allocation vs actual spend for top 5 active budgets">
+                    </canvas>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense by Category Donut Chart -->
+        <div class="col-lg-5">
+            <div class="bt-table-wrapper h-100">
+                <div class="px-4 py-3 border-bottom" style="border-color: var(--border-color) !important;">
+                    <h2 class="h6 mb-0 fw-bold">Expense by Category</h2>
+                </div>
+                <div class="chart-canvas-area position-relative d-flex align-items-center justify-content-center px-4 py-3"
+                    style="height: 400px;">
+                    @if (loading()) {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading chart…</span>
+                        </div>
+                    </div>
+                    } @else {
+                    <canvas #donutCanvas role="img"
+                        aria-label="Donut chart showing expense distribution by category for approved expenses">
+                    </canvas>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses + Budget Overview Row -->
+    <div class="row g-3 mb-4">
+        <!-- Recent Expenses -->
+        <div class="col-lg-6">
+            <div class="bt-table-wrapper h-100">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="h6 mb-0 fw-bold">Recent Expenses</h2>
+                    <a routerLink="/expenses" class="text-decoration-none fs-sm fw-semibold text-primary-brand">
+                        View all <i class="fa-solid fa-arrow-up-right-from-square ms-1 fs-xs" aria-hidden="true"></i>
+                    </a>
+                </div>
+                @if (loading()) {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading…</span>
+                    </div>
+                </div>
+                } @else if (recentExpenses().length === 0) {
+                <div class="empty-state"><i class="fa-solid fa-receipt"></i>
+                    <p>No Expenses found.</p>
+                </div>
+                } @else {
+                <div class="d-flex flex-column">
+                    @for (e of recentExpenses(); track e.expenseID) {
+                    <div class="expense-row d-flex align-items-center justify-content-between px-4 py-3 gap-3">
+                        <div class="d-flex align-items-center gap-3" style="min-width: 0; flex: 1;">
+                            <div class="expense-icon-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                [ngStyle]="{'background': statusBg(e.statusName)}">
+                                <i class="fa-solid fa-receipt" [ngStyle]="{'color': statusColor(e.statusName)}"
+                                    style="font-size: 0.7rem;"></i>
+                            </div>
+                            <div style="min-width: 0;">
+                                <div class="fw-semibold fs-sm text-truncate">{{ e.title }}</div>
+                                <div class="fs-xs text-muted text-truncate d-flex align-items-center gap-2">
+                                    {{ e.submittedByUserName }}
+                                    <span class="badge rounded-pill fs-xs px-2 fw-medium badge-category">{{
+                                        e.categoryName }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end flex-shrink-0 gap-1">
+                            <div class="fw-bold fs-sm">{{ formatAmt(e.amount) }}</div>
+                            <span class="badge rounded-pill px-2 py-1 fs-xs"
+                                [ngStyle]="{'background': statusBg(e.statusName), 'color': statusColor(e.statusName)}">
+                                ● {{ e.statusName }}
+                            </span>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="col-lg-6">
+            <div class="bt-table-wrapper h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+                    style="border-color: var(--border-color) !important;">
+                    <h2 class="h6 mb-0 fw-bold">Budget Overview</h2>
+                    <a routerLink="/budgets" class="text-decoration-none fs-sm fw-semibold text-primary-brand">
+                        View all <i class="fa-solid fa-arrow-up-right-from-square ms-1 fs-xs" aria-hidden="true"></i>
+                    </a>
+                </div>
+                @if (loading()) {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading…</span>
+                    </div>
+                </div>
+                } @else if (budgets().length === 0) {
+                <div class="empty-state"><i class="fa-solid fa-wallet"></i>
+                    <p>No Budgets found.</p>
+                </div>
+                } @else {
+                <div class="d-flex flex-column p-2 overflow-y-auto gap-1" style="flex: 1;">
+                    @for (b of topBudgets(); track b.budgetID) {
+                    <div class="budget-row d-flex align-items-center justify-content-between px-4 py-2 gap-3 cursor-pointer"
+                        [routerLink]="['/budgets', b.budgetID, 'expenses']">
+                        <div class="flex-grow-1 me-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <div>
+                                    <span class="fw-semibold fs-sm">{{ b.title }}</span>
+                                    <div class="fs-xs text-muted">{{ b.departmentName }}</div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-pill px-2 py-1 fs-xs fw-bold" [ngClass]="{
+                          'badge-active': b.statusName === 'Active',
+                          'badge-closed': b.statusName === 'Closed' || b.statusName === 'Expired',
+                          'badge-pending': b.statusName === 'Draft' || b.statusName === 'Pending',
+                          'badge-cancelled': b.statusName === 'Cancelled'
+                        }">
+                                        ● {{ b.statusName }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="utilization-bar flex-grow-1" style="height: 6px;">
+                                    <div class="fill" [ngClass]="utilClass(b.utilizationPercentage)"
+                                        [style.width.%]="b.utilizationPercentage"></div>
+                                </div>
+                                <span class="fs-xs fw-semibold text-muted text-end" style="min-width: 36px;">{{
+                                    b.utilizationPercentage.toFixed(0) }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

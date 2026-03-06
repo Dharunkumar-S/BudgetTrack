@@ -1,0 +1,18 @@
+using Budget_Track.Models.DTOs.Audit;
+using Budget_Track.Models.DTOs.Pagination;
+
+namespace Budget_Track.Repositories.Interfaces
+{
+    public interface IAuditRepository
+    {
+        Task<List<AuditLogDto>> GetAllAuditLogsAsync();
+        Task<PagedResult<AuditLogDto>> GetAllAuditLogsPaginatedAsync(
+            int pageNumber,
+            int pageSize,
+            string? search = null,
+            string? action = null,
+            string? entityType = null
+        );
+        Task<List<AuditLogDto>> GetAuditLogsByUserIdAsync(int userId);
+    }
+}

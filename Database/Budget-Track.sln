@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# SQL Server Management Studio Version 21
+VisualStudioVersion = 17.14.36603.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "Budget-Track", "Budget-Track\Budget-Track.ssmssqlproj", "{ADF0C232-A787-21E0-93D9-BC2F7678AF47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Default = Default|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADF0C232-A787-21E0-93D9-BC2F7678AF47}.Default|Default.ActiveCfg = Default
+		{5C6FB90E-D382-4C69-8C7B-D7327D082608}.Default|Default.ActiveCfg = Default
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3C2AB616-BCD4-411D-BFC4-A01BD90EF9B2}
+	EndGlobalSection
+EndGlobal

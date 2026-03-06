@@ -1,0 +1,12 @@
+.app-shell {
+    background: var(--bg-app);
+}
+
+/* bg-app used on <main> element to avoid inline style */
+.bg-app {
+    background: var(--bg-app);
+}
+
+.page-content {
+    padding: var(--content-padding);
+}

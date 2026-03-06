@@ -1,0 +1,119 @@
+.sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.25s ease, min-width 0.25s ease;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+    min-width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-brand {
+    height: 60px;
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+}
+
+.brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.brand-text {
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.nav-item {
+    color: var(--sidebar-text);
+    transition: background-color 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: var(--sidebar-item-hover-bg);
+    color: var(--sidebar-text-active);
+}
+
+.nav-item.active {
+    background-color: var(--sidebar-item-active-bg);
+    color: var(--sidebar-text-active) !important;
+}
+
+.nav-icon {
+    width: 16px;
+    font-size: 0.875rem;
+}
+
+.nav-label {
+    font-size: 0.875rem;
+}
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    background: var(--primary);
+    font-size: 0.75rem;
+}
+
+.sidebar-border-top {
+    border-color: var(--sidebar-border) !important;
+}
+
+.sidebar-text {
+    color: var(--sidebar-text);
+}
+
+.nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.nav-badge-dot {
+    min-width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: 50%;
+    top: -2px;
+    right: -2px;
+}
+
+.nav-badge-inline {
+    position: static;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+}

@@ -1,0 +1,122 @@
+.login-page {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1d4ed8 100%);
+    min-height: 100vh;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem;
+}
+
+.brand-logo {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* Label — replaced by Bootstrap .form-label + utility classes in HTML */
+
+/* Input */
+
+
+.login-input-icon {
+    position: absolute;
+    left: 1rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.login-input {
+    width: 100%;
+    height: 38px;
+    padding: 0 1rem 0 2.75rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-size: 0.9rem;
+    color: #1e293b;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+}
+
+.login-input::placeholder {
+    color: #94a3b8;
+}
+
+.login-input:focus {
+    border-color: #2563eb;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.login-input.input-error {
+    border-color: #ef4444;
+    background: #fff5f5;
+}
+
+.login-input.input-error:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.login-eye-btn {
+    position: absolute;
+    right: 0.875rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.login-eye-btn:hover {
+    color: #2563eb;
+}
+
+/* Error message — replaced by Bootstrap .invalid-feedback.d-block in HTML */
+
+/* Alert — replaced by Bootstrap .alert.alert-danger in HTML */
+
+/* Button */
+.login-btn {
+    height: 38px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.login-btn:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.login-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.login-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

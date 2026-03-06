@@ -1,0 +1,64 @@
+<header class="top-navbar d-flex align-items-center px-4 flex-shrink-0 border-bottom"
+    style="height: var(--navbar-height); background: var(--bg-card); border-color: var(--border-color) !important;">
+
+    <!-- Collapse toggle -->
+    <button class="btn btn-sm me-3 d-flex align-items-center justify-content-center text-body"
+        style="width:36px; height:36px;" aria-label="Toggle sidebar" (click)="toggleSidebar.emit()">
+        <i class="fa-solid fa-bars" style="font-size: 1.1rem;" aria-hidden="true"></i>
+    </button>
+
+    <!-- Current page name -->
+    <div class="flex-grow-1">
+        <span class="fw-bold text-body" style="font-size: 1.05rem;">{{ pageLabel() }}</span>
+    </div>
+
+    <!-- Right side actions -->
+    <div class="d-flex align-items-center gap-3">
+        <!-- Refresh button -->
+        <button class="btn btn-sm d-flex align-items-center justify-content-center text-secondary"
+            style="width:36px; height:36px; border-radius: 8px;" title="Refresh data" aria-label="Refresh page data"
+            [disabled]="refreshState() !== 'idle'" (click)="onRefresh($event)">
+            <i class="fa-solid fa-arrows-rotate" [class.spin-active]="refreshState() === 'spinning'"
+                style="font-size: 0.95rem;" aria-hidden="true"></i>
+        </button>
+        @if (showNotifications()) {
+        <a routerLink="/notifications" class="position-relative text-decoration-none text-secondary"
+            [attr.aria-label]="hasUnread() ? 'Notifications, ' + unreadCount() + ' unread' : 'Notifications'">
+            <i class="fa-solid fa-bell fs-5" aria-hidden="true"></i>
+            @if (hasUnread()) {
+            <span class="notif-badge" aria-hidden="true">{{ unreadCount() }}</span>
+            }
+        </a>
+        }
+
+        <div class="dropdown">
+            <button class="btn btn-sm d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false"
+                style="border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 12px;">
+                <app-user-avatar [firstName]="authService.currentUser()?.firstName || ''"
+                    [lastName]="authService.currentUser()?.lastName || ''" role="Admin" [size]="32" />
+                <div class="navbar-user-info">
+                    <span class="navbar-user-name">{{ fullName() }}</span>
+                    <span class="navbar-user-role">{{ userRole() }}</span>
+                </div>
+                <i class="fa-solid fa-chevron-down fs-xs text-muted" aria-hidden="true"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border"
+                style="border-color: var(--border-color) !important; min-width: 180px;">
+                <li>
+                    <a class="dropdown-item fs-sm" routerLink="/profile">
+                        <i class="fa-solid fa-user me-2 text-muted"></i> Profile
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider m-1">
+                </li>
+                <li>
+                    <button class="dropdown-item fs-sm text-danger" (click)="onLogout()">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
