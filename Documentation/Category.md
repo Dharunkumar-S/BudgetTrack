@@ -777,39 +777,39 @@ export interface UpdateCategoryDto {
 
 ```mermaid
 flowchart TD
-    U[Admin clicks New Category] --> F[Opens Bootstrap Modal]
-    F --> V[Types CategoryName]
-    V --> S[Clicks Save]
-    S --> VL{Form valid?}
-    VL -->|No: Name empty| ERR1[Show inline validation]
-    VL -->|Yes| SVC[CategoryService.createCategory dto]
-    SVC --> INT[authInterceptor adds Bearer token]
-    INT --> API[POST /api/categories]
+    U["Admin clicks New Category"] --> F["Opens Bootstrap Modal"]
+    F --> V["Types CategoryName"]
+    V --> S["Clicks Save"]
+    S --> VL{"Form valid?"}
+    VL -->|"No - Name empty"| ERR1["Show inline validation"]
+    VL -->|"Yes"| SVC["CategoryService.createCategory"]
+    SVC --> INT["authInterceptor adds Bearer token"]
+    INT --> API["POST /api/categories"]
 
     subgraph Backend
-        API --> CTRL[CategoryController.CreateCategory dto]
-        CTRL --> MW{JwtMiddleware valid?}
-        MW -->|No| U401[401 Unauthorized]
-        MW -->|Yes| AUTH{Role == Admin?}
-        AUTH -->|No| U403[403 Forbidden]
-        AUTH -->|Yes| SRVC[CategoryService.CreateCategoryAsync]
-        SRVC --> REPO[CategoryRepository.CreateCategoryAsync]
-        REPO --> SP[EXEC uspCreateCategory]
-        SP --> UNIQ{Name unique?}
-        UNIQ -->|No| RAISE[RAISERROR → 409 Conflict]
-        UNIQ -->|Yes| CODE[Auto-generate CAT001 code]
-        CODE --> INS[INSERT INTO tCategory]
-        INS --> AUDIT[INSERT INTO tAuditLog Action=Create]
-        AUDIT --> COMMIT[COMMIT → Return CategoryID]
+        API --> CTRL["CategoryController.CreateCategory"]
+        CTRL --> MW{"JwtMiddleware valid?"}
+        MW -->|"No"| U401["401 Unauthorized"]
+        MW -->|"Yes"| AUTH{"Role = Admin?"}
+        AUTH -->|"No"| U403["403 Forbidden"]
+        AUTH -->|"Yes"| SRVC["CategoryService.CreateCategoryAsync"]
+        SRVC --> REPO["CategoryRepository.CreateCategoryAsync"]
+        REPO --> SP["EXEC uspCreateCategory"]
+        SP --> UNIQ{"Name unique?"}
+        UNIQ -->|"No"| RAISE["RAISERROR - 409 Conflict"]
+        UNIQ -->|"Yes"| CODE["Auto-generate CategoryCode CAT001"]
+        CODE --> INS["INSERT INTO tCategory"]
+        INS --> AUDIT["INSERT INTO tAuditLog Action=Create"]
+        AUDIT --> COMMIT["COMMIT - Return CategoryID"]
     end
 
-    COMMIT --> ANG[201 Created { categoryId, message }]
-    ANG --> TOAST[ToastService: Category created]
-    TOAST --> CLOSE[Hide modal]
-    CLOSE --> RELOAD[loadCategories refresh table]
+    COMMIT --> ANG["201 Created categoryId and message"]
+    ANG --> TOAST["ToastService: Category created"]
+    TOAST --> CLOSE["Hide modal"]
+    CLOSE --> RELOAD["loadCategories - refresh table"]
 
-    RAISE --> ANG409[409 Conflict shown as formError]
-    U401 --> AERR[formError shown]
+    RAISE --> ANG409["409 Conflict shown as formError"]
+    U401 --> AERR["formError shown"]
     U403 --> AERR
 ```
 
@@ -817,57 +817,57 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    U[Admin clicks Edit on row] --> OE[openEdit: populate form with current values]
-    OE --> FORM[Admin changes CategoryName / IsActive]
-    FORM --> SAVE[Clicks Save]
-    SAVE --> VL{Form valid?}
-    VL -->|No| ERR[Show validation]
-    VL -->|Yes| SVC[CategoryService.updateCategory id dto]
-    SVC --> API[PUT /api/categories id]
+    U["Admin clicks Edit on row"] --> OE["openEdit - populate form with current values"]
+    OE --> FORM["Admin changes CategoryName or IsActive"]
+    FORM --> SAVE["Clicks Save"]
+    SAVE --> VL{"Form valid?"}
+    VL -->|"No"| ERR["Show validation"]
+    VL -->|"Yes"| SVC["CategoryService.updateCategory"]
+    SVC --> API["PUT /api/categories/:id"]
 
     subgraph Backend
-        API --> CTRL[CategoryController.UpdateCategory]
-        CTRL --> SRVC[CategoryService.UpdateCategoryAsync]
-        SRVC --> REPO[CategoryRepository.UpdateCategoryAsync]
-        REPO --> SP[EXEC uspUpdateCategory]
-        SP --> EXISTS{Category exists?}
-        EXISTS -->|No| E404[RAISERROR → 404 Not Found]
-        EXISTS -->|Yes| DUPCHK{Name conflicts with another?}
-        DUPCHK -->|Yes| E409[RAISERROR → 409 Conflict]
-        DUPCHK -->|No| UPD[UPDATE tCategory SET Name IsActive UpdatedDate]
-        UPD --> AUDIT[INSERT tAuditLog OldValue and NewValue JSON]
-        AUDIT --> COMMIT[COMMIT → 200 OK]
+        API --> CTRL["CategoryController.UpdateCategory"]
+        CTRL --> SRVC["CategoryService.UpdateCategoryAsync"]
+        SRVC --> REPO["CategoryRepository.UpdateCategoryAsync"]
+        REPO --> SP["EXEC uspUpdateCategory"]
+        SP --> EXISTS{"Category exists?"}
+        EXISTS -->|"No"| E404["RAISERROR - 404 Not Found"]
+        EXISTS -->|"Yes"| DUPCHK{"Name conflicts with another?"}
+        DUPCHK -->|"Yes"| E409["RAISERROR - 409 Conflict"]
+        DUPCHK -->|"No"| UPD["UPDATE tCategory SET Name, IsActive, UpdatedDate"]
+        UPD --> AUDIT["INSERT tAuditLog OldValue and NewValue JSON"]
+        AUDIT --> COMMIT["COMMIT - 200 OK"]
     end
 
-    COMMIT --> TOAST[Toast: Category updated]
-    TOAST --> RELOAD[Refresh list]
+    COMMIT --> TOAST["Toast: Category updated"]
+    TOAST --> RELOAD["Refresh list"]
 ```
 
 ### Admin Deletes a Category
 
 ```mermaid
 flowchart TD
-    U[Admin clicks Delete button] --> CONFIRM[Confirm delete modal shown]
-    CONFIRM --> SVC[CategoryService.deleteCategory id]
-    SVC --> API[DELETE /api/categories id]
+    U["Admin clicks Delete button"] --> CONFIRM["Confirm delete modal shown"]
+    CONFIRM --> SVC["CategoryService.deleteCategory"]
+    SVC --> API["DELETE /api/categories/:id"]
 
     subgraph Backend
-        API --> CTRL[CategoryController.DeleteCategory]
-        CTRL --> SRVC[CategoryService.DeleteCategoryAsync]
-        SRVC --> REPO[CategoryRepository.DeleteCategoryAsync]
-        REPO --> SP[EXEC uspDeleteCategory]
-        SP --> EXISTS{Category exists?}
-        EXISTS -->|No| E404[RAISERROR → 404 Not Found]
-        EXISTS -->|Yes| INUSE{Active expenses linked?}
-        INUSE -->|Yes| E400[RAISERROR → 400 Cannot delete]
-        INUSE -->|No| SD[UPDATE tCategory SET IsDeleted=1 IsActive=0 DeletedDate=NOW]
-        SD --> AUDIT[INSERT tAuditLog Action=Delete]
-        AUDIT --> COMMIT[COMMIT → 200 OK]
+        API --> CTRL["CategoryController.DeleteCategory"]
+        CTRL --> SRVC["CategoryService.DeleteCategoryAsync"]
+        SRVC --> REPO["CategoryRepository.DeleteCategoryAsync"]
+        REPO --> SP["EXEC uspDeleteCategory"]
+        SP --> EXISTS{"Category exists?"}
+        EXISTS -->|"No"| E404["RAISERROR - 404 Not Found"]
+        EXISTS -->|"Yes"| INUSE{"Active expenses linked?"}
+        INUSE -->|"Yes"| E400["RAISERROR - 400 Cannot delete in use"]
+        INUSE -->|"No"| SD["UPDATE tCategory SET IsDeleted=1, IsActive=0, DeletedDate=NOW"]
+        SD --> AUDIT["INSERT tAuditLog Action=Delete"]
+        AUDIT --> COMMIT["COMMIT - 200 OK"]
     end
 
-    COMMIT --> TOAST[Toast: Category deleted]
-    TOAST --> RELOAD[Remove row from table]
-    E400 --> AERR[Toast: Cannot delete — category in use]
+    COMMIT --> TOAST["Toast: Category deleted"]
+    TOAST --> RELOAD["Remove row from table"]
+    E400 --> AERR["Toast: Cannot delete - category in use"]
 ```
 
 ---
@@ -876,12 +876,12 @@ flowchart TD
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Active : Admin creates (uspCreateCategory)
-    Active --> Inactive : Admin updates IsActive=false
-    Inactive --> Active : Admin updates IsActive=true
-    Active --> Deleted : Admin soft-deletes (uspDeleteCategory)<br/>IsDeleted=1, IsActive=0
+    [*] --> Active : Admin creates via uspCreateCategory
+    Active --> Inactive : Admin sets IsActive=false
+    Inactive --> Active : Admin sets IsActive=true
+    Active --> Deleted : Admin soft-deletes via uspDeleteCategory
     Inactive --> Deleted : Admin soft-deletes
-    Deleted --> [*] : Hidden from all queries (IsDeleted=0 filter)
+    Deleted --> [*] : Hidden from all queries by IsDeleted filter
 ```
 
 **Status Values Reference:**

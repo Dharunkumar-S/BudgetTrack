@@ -48,60 +48,58 @@ Every request to the Report module requires a valid JWT Bearer token. Role deter
 
 ```mermaid
 sequenceDiagram
-    participant U as User (Admin / Manager)
+    participant U as Admin or Manager
     participant A as Angular App
     participant I as authInterceptor
     participant API as ASP.NET Core API
     participant MW as JwtMiddleware
     participant DB as SQL Server
 
-    Note over U,A: Step 1 — Login
-    U->>A: Enter email + password
-    A->>API: POST /api/auth/login { email, password }
-    API->>DB: SELECT user WHERE Email=? AND IsDeleted=0
-    DB-->>API: User record with PasswordHash + RoleID
-    API->>API: Generate AccessToken (60min) + RefreshToken (7d)
-    API-->>A: { token:{accessToken, refreshToken}, user:{role:'Admin'|'Manager'} }
-    A->>A: _accessToken.set(accessToken) [Signal]
-    A->>A: localStorage.setItem('bt_access_token', accessToken)
+    Note over U,A: Step 1 - Login
+    U->>A: Enter email and password
+    A->>API: POST /api/auth/login
+    API->>DB: SELECT user WHERE Email matches AND IsDeleted=0
+    DB-->>API: User record with PasswordHash and RoleID
+    API->>API: Generate AccessToken 60min and RefreshToken 7d
+    API-->>A: accessToken, refreshToken, user role Admin or Manager
+    A->>A: Store accessToken in Signal and localStorage
     A->>U: Navigate to /dashboard
 
-    Note over U,A: Step 2 — Navigate to /reports
-    U->>A: Click "Reports" in Sidebar
-    A->>A: authGuard: isAuthenticated() → true ✓
-    A->>A: roleGuard: role == Admin OR Manager ✓
+    Note over U,A: Step 2 - Navigate to /reports
+    U->>A: Click Reports in Sidebar
+    A->>A: authGuard - isAuthenticated check passes
+    A->>A: roleGuard - role is Admin or Manager, passes
     A->>A: ReportsComponent loads
 
-    Note over A,API: Step 3 — Admin Fetches Period Report
-    A->>I: ReportService.getPeriodReport(start, end)
-    I->>I: Convert Date → UTC ISO string (YYYY-MM-DDTHH:mm:ss)
-    I->>API: GET /api/reports/period?startDate=2026-01-01T00:00:00&endDate=2026-03-31T23:59:59
-             Authorization: Bearer eyJhbGci...
-    API->>MW: JwtMiddleware.InvokeAsync() — validates token sig/expiry/issuer
+    Note over A,API: Step 3 - Admin Fetches Period Report
+    A->>I: ReportService.getPeriodReport with start and end dates
+    I->>I: Convert Date to UTC ISO string format
+    I->>API: GET /api/reports/period with startDate and endDate query params and Bearer token
+    API->>MW: JwtMiddleware validates token signature, expiry, issuer
     MW->>DB: Confirm user is Active
-    DB-->>MW: User { Role=Admin }
-    MW->>API: Attach principal
-    API->>API: [Authorize(Roles="Admin")] — passes
-    API->>DB: EXEC uspGetPeriodReport @StartDate, @EndDate
-    DB-->>API: Budget + Expense aggregations
-    API-->>A: 200 OK { PeriodReportDto }
-    A->>U: Render charts + table
+    DB-->>MW: User with Role=Admin
+    MW->>API: Attach principal to context
+    API->>API: Authorize Roles=Admin passes
+    API->>DB: EXEC uspGetPeriodReport with StartDate and EndDate
+    DB-->>API: Budget and Expense aggregations
+    API-->>A: 200 OK PeriodReportDto
+    A->>U: Render charts and table
 
-    Note over A,API: Step 4 — Manager Fetches Budget Report
-    A->>I: ReportService.getBudgetReport('BT26001')
-    I->>API: GET /api/reports/budget?budgetCode=BT26001  Bearer ...
-    API->>API: [Authorize(Roles="Admin,Manager")] — passes
-    API->>DB: EXEC uspGetBudgetReport + 2 more SPs
-    DB-->>API: BudgetReportDto
+    Note over A,API: Step 4 - Manager Fetches Budget Report
+    A->>I: ReportService.getBudgetReport with budgetCode BT26001
+    I->>API: GET /api/reports/budget?budgetCode=BT26001 with Bearer token
+    API->>API: Authorize Roles=Admin or Manager passes
+    API->>DB: EXEC uspGetBudgetReport and 2 additional SPs
+    DB-->>API: BudgetReportDto with header, counts, expenses
     API-->>A: 200 OK
     A->>U: Render budget detail report with Chart.js
 
-    Note over A,API: Step 5 — Token Refresh on 401
-    API-->>I: 401 (token expired)
-    I->>A: authService.handleTokenRefresh()
+    Note over A,API: Step 5 - Token Refresh on 401
+    API-->>I: 401 token expired
+    I->>A: authService.handleTokenRefresh
     A->>API: POST /api/auth/token/refresh
-    API-->>A: New tokens
-    I->>API: Retry request
+    API-->>A: New accessToken and refreshToken
+    I->>API: Retry original request with new token
     API-->>A: 200 OK
 ```
 

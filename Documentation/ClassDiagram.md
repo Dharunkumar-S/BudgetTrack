@@ -212,9 +212,18 @@ classDiagram
 classDiagram
     direction LR
 
+    %% ── Enum definitions ─────────────────────────────────────
+
+    class UserRole {
+        Employee = 1
+        Manager = 2
+        Admin = 3
+    }
+
     class UserStatus {
-        Active = 0
-        Inactive = 1
+        Active = 1
+        Inactive = 2
+        Suspended = 3
     }
 
     class BudgetStatus {
@@ -226,6 +235,7 @@ classDiagram
         Pending = 1
         Approved = 2
         Rejected = 3
+        Cancelled = 4
     }
 
     class NotificationStatus {
@@ -234,7 +244,7 @@ classDiagram
     }
 
     class NotificationType {
-        ExpenseSubmitted = 1
+        ExpenseApprovalReminder = 1
         ExpenseApproved = 2
         ExpenseRejected = 3
         BudgetCreated = 4
@@ -248,17 +258,81 @@ classDiagram
         Delete = 3
     }
 
-    class UserRole {
-        Admin = 1
-        Manager = 2
-        Employee = 3
+    class ReportScopeType {
+        Department = 1
+        Budget = 2
+        Period = 3
     }
 
     class SortOrder {
-        Asc
-        Desc
+        asc = 1
+        desc = 2
     }
+
+    %% ── Entity stubs (fields that reference an enum) ─────────
+
+    class User {
+        +UserRole RoleID
+        +UserStatus Status
+    }
+
+    class Budget {
+        +BudgetStatus Status
+    }
+
+    class Expense {
+        +ExpenseStatus Status
+    }
+
+    class Notification {
+        +NotificationType Type
+        +NotificationStatus Status
+    }
+
+    class AuditLog {
+        +AuditAction Action
+    }
+
+    class Report {
+        +ReportScopeType Scope
+    }
+
+    class FilterDTO {
+        +SortOrder SortOrder
+    }
+
+    %% ── Entity → Enum links ───────────────────────────────────
+
+    User --> UserRole        : RoleID uses
+    User --> UserStatus      : Status uses
+
+    Budget --> BudgetStatus  : Status uses
+
+    Expense --> ExpenseStatus : Status uses
+
+    Notification --> NotificationType   : Type uses
+    Notification --> NotificationStatus : Status uses
+
+    AuditLog --> AuditAction : Action uses
+
+    Report --> ReportScopeType : Scope uses
+
+    FilterDTO --> SortOrder : SortOrder uses
 ```
+
+### Enumeration Quick Reference
+
+| Enum | Values | Entity → Field |
+|---|---|---|
+| `UserRole` | Employee=1, Manager=2, Admin=3 | `User.RoleID` · JWT `ClaimTypes.Role` · `[Authorize(Roles=...)]` |
+| `UserStatus` | Active=1, Inactive=2, Suspended=3 | `User.Status` — JwtMiddleware rejects non-Active users |
+| `BudgetStatus` | Active=1, Closed=2 | `Budget.Status` — controls expense submission eligibility |
+| `ExpenseStatus` | Pending=1, Approved=2, Rejected=3, Cancelled=4 | `Expense.Status` — drives the manager approval workflow |
+| `NotificationStatus` | Unread=1, Read=2 | `Notification.Status` — navbar badge unread count |
+| `NotificationType` | ExpenseApprovalReminder=1, ExpenseApproved=2, ExpenseRejected=3, BudgetCreated=4, BudgetUpdated=5, BudgetDeleted=6 | `Notification.Type` — fanout inserted inside SPs |
+| `AuditAction` | Create=1, Update=2, Delete=3 | `AuditLog.Action` — immutable audit trail |
+| `ReportScopeType` | Department=1, Budget=2, Period=3 | `Report.Scope` — report type discriminator |
+| `SortOrder` | asc=1, desc=2 | All paginated filter DTOs (`BudgetFilterDto`, `ExpenseFilterDto`, etc.) |
 
 ---
 
