@@ -2,21 +2,23 @@
 
 > **Stack:** ASP.NET Core 10 · Entity Framework Core 10 · SQL Server · Angular 21 · Bootstrap 5
 > **Base URL:** `http://localhost:5131`
-> **Generated:** 2026-03-06
+> **Generated:** 2026-03-07
 
 ---
 
 ## Table of Contents
 
 1. [Module Overview](#1-module-overview)
-2. [Authentication Flow](#2-authentication-flow)
+2. [Authentication & Authorization Flow](#2-authentication--authorization-flow)
 3. [Role-Based Access Control](#3-role-based-access-control)
-4. [Entity & DTOs](#4-entity--dtos)
-5. [Repository & Service Layer](#5-repository--service-layer)
-6. [Controller Layer](#6-controller-layer)
-7. [Complete API Reference](#7-complete-api-reference)
-8. [End-to-End Data Flow Diagrams](#8-end-to-end-data-flow-diagrams)
-9. [User Lifecycle State Machine](#9-user-lifecycle-state-machine)
+4. [Database Layer — User.sql](#4-database-layer--usersql)
+5. [Entity & DTOs](#5-entity--dtos)
+6. [Repository & Service Layer](#6-repository--service-layer)
+7. [Controller Layer](#7-controller-layer)
+8. [Complete API Reference](#8-complete-api-reference)
+9. [Angular Frontend](#9-angular-frontend)
+10. [End-to-End Data Flow Diagrams](#10-end-to-end-data-flow-diagrams)
+11. [User Lifecycle State Machine](#11-user-lifecycle-state-machine)
 
 ---
 
@@ -42,7 +44,7 @@ The **Auth & User Module** handles identity: login, JWT token issuance, refresh,
 
 ---
 
-## 2. Authentication Flow
+## 2. Authentication & Authorization Flow
 
 ```mermaid
 sequenceDiagram
@@ -154,7 +156,39 @@ flowchart LR
 
 ---
 
-## 4. Entity & DTOs
+## 4. Database Layer — User.sql
+
+The Auth & User module uses **1 View** and **3 Stored Procedures** in `Database/Budget-Track/User.sql`:
+
+### `vwGetUserProfile` — Profile View
+
+Returns all active (non-deleted) users with their department, role, and manager info via JOINs:
+
+| Column | Source | Description |
+|--------|--------|-------------|
+| `UserID` | `tUser` | User PK |
+| `FirstName`, `LastName` | `tUser` | Name fields |
+| `Email`, `EmployeeID` | `tUser` | Identity |
+| `DepartmentID`, `DepartmentName` | `INNER JOIN tDepartment` | Department |
+| `ManagerID`, `ManagerEmployeeId`, `ManagerName` | `LEFT JOIN tUser m` | Manager (nullable) |
+| `RoleID`, `RoleName` | `INNER JOIN tRole` | Role |
+| `Status`, `IsActive` | `tUser` | `Status=0 → IsActive=1 (BIT)` |
+| `CreatedDate`, `UpdatedDate`, `IsDeleted` | `tUser` | Audit fields |
+
+**Filter:** `WHERE u.IsDeleted = 0`
+
+### Stored Procedures
+
+| Stored Procedure | Parameters | Description |
+|------------------|------------|-------------|
+| `uspGetUserProfile` | `@UserId INT` | Retrieves single user profile with joins (Department, Role, Manager); `WHERE UserID = @UserId AND IsDeleted = 0` |
+| `uspGetUsersList` | `@RoleId?`, `@EmployeeId?`, `@IsDeleted?`, `@IsActive?`, `@PageNumber`, `@PageSize`, `@TotalCount OUTPUT` | Paginated, filtered user list with department, role, and manager joins |
+
+> **Note:** The EF Core `UserRepository` also uses `vwGetUserProfile` and `uspGetUserProfile` / `uspGetUsersList` for profile and list queries.
+
+---
+
+## 5. Entity & DTOs
 
 ### Entity: `User` (table: `tUser`)
 
@@ -222,7 +256,7 @@ flowchart LR
 
 ---
 
-## 5. Repository & Service Layer
+## 6. Repository & Service Layer
 
 ### `IUserRepository` (key methods)
 
@@ -260,7 +294,7 @@ Task<AuthResponseDto> UpdateUserAsync(int userId, UpdateUserByAdminDto dto, int 
 
 ---
 
-## 6. Controller Layer
+## 7. Controller Layer
 
 ### `AuthController` (Route: `api/auth`)
 
@@ -287,7 +321,7 @@ Task<AuthResponseDto> UpdateUserAsync(int userId, UpdateUserByAdminDto dto, int 
 
 ---
 
-## 7. Complete API Reference
+## 8. Complete API Reference
 
 ### `POST /api/auth/login`
 
@@ -567,7 +601,161 @@ Task<AuthResponseDto> UpdateUserAsync(int userId, UpdateUserByAdminDto dto, int 
 
 ---
 
-## 8. End-to-End Data Flow Diagrams
+## 9. Angular Frontend
+
+### Component: `UsersListComponent`
+
+**File:** `Frontend/Budget-Track/src/app/features/users/users-list/users-list.component.ts`
+
+#### Injected Dependencies
+
+| Dependency        | Purpose                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `UserService`     | All HTTP calls to `/api/users` and `/api/auth/*`                                |
+| `AuthService`     | Reads `isAdmin()`, `isManager()`, `currentUser()` for conditional UI            |
+| `ToastService`    | Shows success/error toast notifications                                         |
+| `FormBuilder`     | Reactive form for Create/Edit user modal                                        |
+
+#### Angular Signals Used
+
+```typescript
+loading      = signal(true);                                     // Spinner while fetching
+saving       = signal(false);                                    // Disable Save during request
+formError    = signal('');                                       // Inline form error message
+editMode     = signal(false);                                    // Create vs Edit modal mode
+selectedUser = signal<UserDto | null>(null);                     // Row selected for edit/delete
+users        = signal<PagedResult<UserDto>>({ data:[], ... });   // Paginated user list
+stats        = signal<UserStatsDto | null>(null);                // KPI tile data
+```
+
+#### Form Validation (Reactive Forms)
+
+**Create User form:**
+```typescript
+this.userForm = this.fb.group({
+    firstName:    ['', [Validators.required, Validators.maxLength(50)]],
+    lastName:     ['', [Validators.required, Validators.maxLength(50)]],
+    email:        ['', [Validators.required, Validators.email]],
+    password:     ['', [Validators.required, Validators.minLength(8)]],
+    roleId:       ['', Validators.required],
+    departmentId: ['', Validators.required],
+    managerId:    [null],   // Optional — required only if roleId = 3 (Employee)
+});
+```
+
+#### SSG Compatibility
+
+```typescript
+ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.loadUsers();
+    if (this.authService.isAdmin()) this.loadStats();
+}
+```
+
+---
+
+### Component: `ProfileComponent`
+
+**File:** `Frontend/Budget-Track/src/app/features/profile/profile.component.ts`
+
+Displays the logged-in user's own profile card (name, email, department, manager, role). Also shows the Change Password form.
+
+---
+
+### Angular Service: `UserService`
+
+**File:** `Frontend/Budget-Track/src/services/user.service.ts`
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class UserService {
+    private http = inject(HttpClient);
+    private apiUrl = environment.apiUrl;
+
+    getProfile(): Observable<{ success: boolean; data: UserProfileDto }>
+        → GET /api/users/profile
+
+    getUsers(params: UserListParams): Observable<UserPagedResult>
+        → GET /api/users  (with HttpParams for all filters/pagination)
+
+    getEmployeesByManager(managerUserId: number): Observable<UserDto[]>
+        → GET /api/users/{managerUserId}/employees
+
+    getManagers(): Observable<any[]>
+        → GET /api/users/managers
+
+    createUser(dto: CreateUserDto): Observable<{ success: boolean; message: string; user: UserDto }>
+        → POST /api/auth/createuser
+
+    getUserStats(): Observable<UserStatsDto>
+        → GET /api/users/stats
+
+    updateUser(userId: number, dto: UpdateUserDto): Observable<{ success: boolean; message: string }>
+        → PUT /api/users/{userId}
+
+    deleteUser(userId: number): Observable<{ success: boolean; message: string }>
+        → DELETE /api/users/{userId}
+
+    changePassword(payload: { currentPassword; newPassword }): Observable<{ success; message }>
+        → POST /api/auth/changepassword
+}
+```
+
+---
+
+### TypeScript Models (`user.models.ts`)
+
+```typescript
+export enum UserStatus { Active = 0, Inactive = 1 }
+
+export interface UserDto {
+    userID: number; firstName: string; lastName: string;
+    email: string; employeeID: string;
+    departmentID: number; departmentName: string;
+    roleID: number; roleName: string;
+    managerID: number | null; managerName: string | null; managerEmployeeId: string | null;
+    status: number; isActive: boolean; isDeleted: boolean;
+    createdDate: string; lastLoginDate: string | null;
+}
+
+export interface CreateUserDto {
+    firstName: string; lastName: string; email: string; password: string;
+    roleId: number; departmentId: number; managerId?: number;
+}
+
+export interface UpdateUserDto extends Partial<CreateUserDto> {
+    status?: number; newPassword?: string;
+}
+
+export interface UserListParams extends PaginationParams, SortParams {
+    roleId?: number; search?: string; departmentId?: number;
+    isDeleted?: boolean; isActive?: boolean;
+}
+
+export type UserPagedResult = PagedResult<UserDto>;
+```
+
+---
+
+### Bootstrap UI Components Used
+
+| Component                            | Usage                                                      |
+| ------------------------------------ | ---------------------------------------------------------- |
+| `table table-hover table-responsive` | User data grid with filter columns                         |
+| `modal` (via `bootstrap.Modal`)      | Create/Edit and Delete confirmation dialogs                |
+| `card card-body`                     | KPI tiles: Total, Admin, Manager, Employee, Active counts  |
+| `badge bg-success / bg-secondary`    | Active / Inactive status badge                             |
+| `badge`                              | Role badge (Admin=purple, Manager=blue, Employee=green)    |
+| `form-control`, `form-select`        | All user form fields                                       |
+| `form-check form-switch`             | Active status toggle on Update form                        |
+| `invalid-feedback`                   | Inline validation messages                                 |
+| `spinner-border`                     | Loading indicator                                          |
+| `pagination`                         | Server-side page navigation                                |
+
+---
+
+## 10. End-to-End Data Flow Diagrams
 
 ### Admin Registers a New User
 
@@ -607,7 +795,7 @@ flowchart TD
 
 ---
 
-## 9. User Lifecycle State Machine
+## 11. User Lifecycle State Machine
 
 ```mermaid
 stateDiagram-v2

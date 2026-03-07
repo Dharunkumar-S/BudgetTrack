@@ -2,6 +2,7 @@
 
 > **Stack:** ASP.NET Core 10 · Entity Framework Core 10 · SQL Server · Angular 21 · Bootstrap 5
 > **Base URL:** `http://localhost:5131`
+> **Generated:** 2026-03-07
 
 ---
 
@@ -37,6 +38,9 @@
 28. [Audit — Fetch Audit Logs](#28-audit--fetch-audit-logs)
 29. [Dashboard — Load KPI & Charts](#29-dashboard--load-kpi--charts)
 30. [Cross-Cutting — Notification Fanout on Budget Create](#30-cross-cutting--notification-fanout-on-budget-create)
+31. [Role-Wise Flow — Admin Complete Journey](#31-role-wise-flow--admin-complete-journey)
+32. [Role-Wise Flow — Manager Complete Journey](#32-role-wise-flow--manager-complete-journey)
+33. [Role-Wise Flow — Employee Complete Journey](#33-role-wise-flow--employee-complete-journey)
 
 ---
 
@@ -86,9 +90,8 @@ sequenceDiagram
         API->>API: Generate AccessToken (60 min JWT) with claims
         Note over API: Claims: sub=UserID, email, role, employeeId, managerId
         API->>API: Generate RefreshToken (7 days, opaque)
-        API->>DB: UPDATE tUser SET RefreshToken=?, RefreshTokenExpiryTime=?
+        API->>DB: UPDATE tUser SET RefreshToken=?, RefreshTokenExpiryTime=?, LastLoginDate=NOW()
         DB-->>API: OK
-        API->>DB: INSERT INTO tAuditLog (Action=Login, UserID, Description)
         API-->>A: 200 { success:true, user:{...}, token:{accessToken, refreshToken, expiresAt} }
         A->>A: _accessToken.set(accessToken) [Angular Signal]
         A->>A: localStorage.setItem('bt_access_token', accessToken)
@@ -200,7 +203,6 @@ sequenceDiagram
     A->>API: POST /api/auth/logout { refreshToken }
     API->>DB: UPDATE tUser SET RefreshToken=NULL, RefreshTokenExpiryTime=NULL WHERE UserID=?
     DB-->>API: OK
-    API->>DB: INSERT INTO tAuditLog (Action=Logout)
     API-->>A: 200 { message:"Logged out successfully" }
     A->>A: _accessToken.set(null)
     A->>A: _currentUser.set(null)
@@ -236,7 +238,6 @@ sequenceDiagram
         API->>API: PasswordHasher.HashPassword(newPassword)
         API->>DB: UPDATE tUser SET PasswordHash=newHash, UpdatedDate=NOW()
         DB-->>API: OK
-        API->>DB: INSERT INTO tAuditLog (Action=ChangePassword, UserID)
         API-->>A: 200 { success:true, message:"Password changed successfully" }
         A->>U: Show success toast, close modal
     end
@@ -281,7 +282,7 @@ sequenceDiagram
         API->>API: PasswordHasher.HashPassword(password)
         API->>DB: INSERT INTO tUser (FirstName, LastName, Email, PasswordHash, RoleID, DeptID, ManagerID, EmployeeID, Status=Active, CreatedDate, IsDeleted=0)
         DB-->>API: NewUserID
-        API->>DB: INSERT INTO tAuditLog (Action=Create, EntityType='User', NewValue=JSON)
+        Note over API,DB: User audit is written by EF Core SaveChangesAsync, not an SP
         API-->>A: 201 { success:true, message:"User registered successfully as {Role}", user:{...} }
         A->>U: Show success toast, refresh user table
     end
@@ -956,8 +957,8 @@ sequenceDiagram
     U->>A: Navigate to /reports, select Period tab
     U->>A: Set StartDate + EndDate, click Generate
     A->>INT: ReportService.getPeriodReport({ startDate, endDate })
-    INT->>API: GET /api/reports/period?startDate=2026-01-01&endDate=2026-03-31
-    API->>API: [Authorize(Roles="Admin,Manager")]
+    INT->>API: GET /api/reports/period?startDate=2026-01-01T00:00:00&endDate=2026-03-31T23:59:59
+    API->>API: Authorize Roles Admin only
     API->>DB: EXEC uspGetPeriodReport @StartDate, @EndDate
 
     DB->>DB: SELECT budgets + SUM(approved expenses) WHERE StartDate >= @StartDate AND EndDate <= @EndDate
@@ -984,7 +985,7 @@ sequenceDiagram
     U->>A: Select Department tab in Reports, pick department, click Generate
     A->>INT: ReportService.getDepartmentReport({ departmentName })
     INT->>API: GET /api/reports/department?departmentName=Engineering
-    API->>API: [Authorize(Roles="Admin,Manager")]
+    API->>API: Authorize Roles Admin only
     API->>DB: EXEC uspGetDepartmentReport @DepartmentName
 
     DB->>DB: SELECT dept-level budget totals + approved expense aggregates WHERE DepartmentName LIKE ?
@@ -1008,20 +1009,23 @@ sequenceDiagram
     participant API as ASP.NET Core API
     participant DB as SQL Server
 
-    U->>A: Select Budget tab in Reports, search/pick a budget code, click Generate
-    A->>INT: ReportService.getBudgetReport({ budgetCode })
+    U->>A: Select Budget tab in Reports, enter a budget code, click Generate
+    A->>INT: ReportService.getBudgetReport(budgetCode)
     INT->>API: GET /api/reports/budget?budgetCode=BT26001
-    API->>API: [Authorize]
+    API->>API: Authorize Roles Admin and Manager
     API->>DB: EXEC uspGetBudgetReport @BudgetCode
+    API->>DB: EXEC uspGetBudgetReportExpenseCounts @BudgetCode
+    API->>DB: EXEC uspGetBudgetReportExpenses @BudgetCode
 
-    DB->>DB: SELECT b.*, d.DepartmentName, u.ManagerName FROM tBudget b WHERE Code=@BudgetCode
-    DB->>DB: SELECT e.*, c.CategoryName, eu.SubmitterName FROM tExpense e WHERE BudgetID=b.BudgetID GROUP BY Category
-    DB-->>API: BudgetReportDto { budget:{...}, expenses:[{...}], categoryBreakdown:[{...}], utilizationPct }
+    DB-->>API: Budget header with ManagerName, ManagerEmployeeId, AmountRemaining capped at 0
+    DB-->>API: ExpenseCounts with Pending, Approved, Rejected breakdown and ApprovalRate
+    DB-->>API: Expense list ordered by SubmittedDate DESC
 
-    API-->>A: 200 { data: BudgetReportDto }
-    A->>A: Render budget header (code, dept, manager, dates, utilization bar)
-    A->>A: Render Chart.js pie (expense distribution by category)
-    A->>A: Render expenses breakdown table
+    API-->>A: 200 BudgetReportDto assembled from 3 SP results
+    A->>A: Render budget header card with code, dept, manager, dates, utilization
+    A->>A: Render KPI tiles Allocated, Spent, Remaining, Utilization percent
+    A->>A: Render Chart.js doughnut with Pending, Approved, Rejected counts
+    A->>A: Render expense list table sorted newest first
     A->>U: Single-budget detailed report displayed
 ```
 
@@ -1056,7 +1060,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant U as User (Browser)
+    participant U as User Browser
     participant A as Angular App
     participant INT as authInterceptor
     participant API as ASP.NET Core API
@@ -1067,28 +1071,29 @@ sequenceDiagram
     Note over A: Parallel HTTP calls for all dashboard data
 
     par Budget KPIs
-        A->>INT: BudgetService.getBudgets({ pageSize:500 })
+        A->>INT: BudgetService.getBudgets with pageSize 500
         INT->>API: GET /api/budgets?pageSize=500
-        API->>DB: SELECT * FROM vwGetAllBudgets (role-scoped)
-        DB-->>API: Budget list with AmountAllocated, AmountSpent, UtilizationPct
+        API->>DB: SELECT from vwGetAllBudgets role-scoped
+        DB-->>API: Budget list with AmountAllocated, AmountSpent, AmountRemaining
         API-->>A: 200 Budget list
-        A->>A: Compute: totalBudgets, totalAllocated, totalSpent; sum amountRemaining from DB for totalRemaining (never negative)
+        A->>A: Compute totalBudgets, totalAllocated, totalSpent, totalRemaining
     and Expense Stats
-        A->>INT: ExpenseService.getExpenseStats()
+        A->>INT: ExpenseService.getExpenseStats
         INT->>API: GET /api/expenses/stats
-        API->>DB: SELECT COUNT(*), SUM(Amount) BY Status FROM vwGetAllExpenses
-        DB-->>API: { totalExpenses, pending, approved, rejected, amounts... }
-        API-->>A: 200 Stats
-        A->>A: Render KPI cards: Total, Pending, Approved, Rejected
+        API->>DB: SELECT COUNT, SUM grouped by Status from vwGetAllExpenses
+        DB-->>API: totalExpenses, pending, approved, rejected counts and amounts
+        API-->>A: 200 Stats object
+        A->>A: Render KPI cards Total, Pending, Approved, Rejected
     and Chart Data
-        A->>INT: BudgetService.getBudgets({ pageSize:10, sortBy:'CreatedDate' })
-        INT->>API: GET /api/budgets?pageSize=10
+        A->>INT: BudgetService.getBudgets with pageSize 10 sortBy CreatedDate
+        INT->>API: GET /api/budgets?pageSize=10&sortBy=CreatedDate
+        API->>DB: SELECT top 10 budgets from vwGetAllBudgets
         DB-->>API: Top 10 budgets
-        API-->>A: 200
-        A->>A: Render Chart.js bar chart: Budget Code vs Allocated/Spent
+        API-->>A: 200 Budget list
+        A->>A: Render Chart.js bar chart Budget Code vs Allocated and Spent
     end
 
-    A->>U: Dashboard displayed with KPI cards + charts
+    A->>U: Dashboard displayed with KPI cards and charts
 ```
 
 ---
@@ -1098,29 +1103,358 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant MGR as Manager
-    participant DB as SQL Server (uspCreateBudget)
-    participant EMP1 as Employee 1 (tNotification)
-    participant EMP2 as Employee 2 (tNotification)
-    participant APP as Angular App (next poll)
+    participant DB as SQL Server SP
+    participant EMP1 as Employee One
+    participant EMP2 as Employee Two
+    participant APP as Angular App
 
     Note over MGR,DB: During uspCreateBudget execution
-    MGR->>DB: EXEC uspCreateBudget ...
-    DB->>DB: INSERT INTO tBudget → BudgetID = 7
+    MGR->>DB: EXEC uspCreateBudget with budget details
+    DB->>DB: INSERT INTO tBudget, BudgetID = 7
 
-    DB->>DB: SELECT UserID FROM tUser WHERE ManagerID = @CreatedByUserID AND IsDeleted = 0
-    DB-->>DB: [UserID=5 (EMP1), UserID=6 (EMP2)]
+    DB->>DB: SELECT UserID FROM tUser WHERE ManagerID = CreatedByUserID AND IsDeleted = 0
+    DB-->>DB: Returns EMP1 UserID=5 and EMP2 UserID=6
 
-    DB->>EMP1: INSERT INTO tNotification (Type=4/BudgetCreated, ReceiverUserID=5, SenderUserID=MGR, Message='New Budget BT26007 - Q1 Ops Created', Status=1/Unread)
-    DB->>EMP2: INSERT INTO tNotification (Type=4/BudgetCreated, ReceiverUserID=6, SenderUserID=MGR, Message='New Budget BT26007 - Q1 Ops Created', Status=1/Unread)
+    DB->>EMP1: INSERT tNotification Type=4 BudgetCreated ReceiverUserID=5 Status=1 Unread
+    DB->>EMP2: INSERT tNotification Type=4 BudgetCreated ReceiverUserID=6 Status=1 Unread
     DB->>DB: COMMIT TRANSACTION
 
-    Note over APP: On next Angular notification poll (topbar badge refresh)
-    APP->>DB: GET /api/notifications?status=Unread (for EMP1 session)
-    DB-->>APP: { unreadCount:1, data:[{type:BudgetCreated, message:...}] }
-    APP->>APP: notificationBadge.set(unreadCount)
+    Note over APP: On next Angular notification poll for topbar badge
+    APP->>DB: GET /api/notifications/unread-count for EMP1 session
+    DB-->>APP: unreadCount=1
+    APP->>APP: unreadCount$.next called, badge signal updated
     Note right of APP: Employee sees bell badge with unread count
 ```
 
 ---
 
-*BudgetTrack Sequence Diagrams — Complete · v1.0 · Generated 2026-03-06*
+## 31. Role-Wise Flow — Admin Complete Journey
+
+> **Admin** has full system access: user management, departments, categories, all budgets, audit logs, and reports.
+
+```mermaid
+sequenceDiagram
+    participant ADM as Admin Browser
+    participant A as Angular App
+    participant INT as authInterceptor
+    participant API as ASP.NET Core API
+    participant DB as SQL Server
+
+    Note over ADM,DB: Step 1 - Login
+    ADM->>A: Enter admin@budgettrack.com + password, click Login
+    A->>API: POST /api/auth/login
+    API->>DB: Validate credentials, Role=Admin
+    DB-->>API: User record with RoleID=1
+    API-->>A: 200 accessToken + refreshToken + user profile
+    A->>A: _accessToken.set, _currentUser.set Role=Admin
+    A->>ADM: Redirect to /dashboard
+
+    Note over ADM,DB: Step 2 - Dashboard Overview
+    ADM->>A: Navigate to /dashboard
+    A->>INT: Parallel calls BudgetService and ExpenseService
+    INT->>API: GET /api/budgets/admin and GET /api/expenses/stats
+    API->>DB: SELECT from vwGetAllBudgetsAdmin and vwGetAllExpenses
+    DB-->>API: All budgets including deleted + expense stats
+    API-->>A: 200 full budget list + stats object
+    A->>ADM: Render KPI cards and Chart.js bar chart
+
+    Note over ADM,DB: Step 3 - Create New User
+    ADM->>A: Navigate to /users, click Add User, fill form, submit
+    A->>INT: POST /api/auth/createuser with AdminUserRegisterDto
+    INT->>API: POST /api/auth/createuser Role=Admin guard
+    API->>DB: Check email unique, generate EmployeeID, hash password
+    DB-->>API: NewUserID
+    API-->>A: 201 user created successfully
+    A->>ADM: Toast success, refresh user table
+
+    Note over ADM,DB: Step 4 - Manage Departments
+    ADM->>A: Navigate to /departments, click Add Department
+    A->>INT: POST /api/departments with CreateDepartmentDto
+    INT->>API: POST /api/departments Role=Admin guard
+    API->>DB: EXEC uspCreateDepartment auto-code DEPT003, audit log
+    DB-->>API: NewDepartmentID
+    API-->>A: 201 department created
+    A->>ADM: Toast success, department appears in table
+
+    Note over ADM,DB: Step 5 - Manage Categories
+    ADM->>A: Navigate to /categories, click Add Category
+    A->>INT: POST /api/categories with CreateCategoryDto
+    INT->>API: POST /api/categories Role=Admin guard
+    API->>DB: EXEC uspCreateCategory auto-code CAT007, audit log
+    DB-->>API: NewCategoryID
+    API-->>A: 201 category created
+    A->>ADM: Toast success, category in table
+
+    Note over ADM,DB: Step 6 - View All Budgets
+    ADM->>A: Navigate to /budgets
+    A->>INT: GET /api/budgets/admin with filters
+    INT->>API: GET /api/budgets/admin Role=Admin guard
+    API->>DB: SELECT from vwGetAllBudgetsAdmin paginated
+    DB-->>API: All budgets with UtilizationPct and DaysRemaining
+    API-->>A: 200 PagedResult with all budgets
+    A->>ADM: Render budget table with utilization bars
+
+    Note over ADM,DB: Step 7 - View Audit Logs
+    ADM->>A: Navigate to /audits, apply filters EntityType=Budget
+    A->>INT: GET /api/audits?entityType=Budget&pageNumber=1
+    INT->>API: GET /api/audits Role=Admin guard
+    API->>DB: SELECT from tAuditLog WHERE EntityType=Budget paginated
+    DB-->>API: List of AuditLogDto with OldValue and NewValue JSON
+    API-->>A: 200 paginated audit log list
+    A->>ADM: Render audit table, click row to expand JSON diff
+
+    Note over ADM,DB: Step 8 - Generate Period Report
+    ADM->>A: Navigate to /reports, select Period tab, set dates, Generate
+    A->>INT: GET /api/reports/period?startDate=2026-01-01T00:00:00&endDate=2026-03-31T23:59:59
+    INT->>API: GET /api/reports/period Role=Admin guard
+    API->>DB: EXEC uspGetPeriodReport
+    DB-->>API: PeriodReportDto with allocated, spent, utilization per budget
+    API-->>A: 200 report data
+    A->>ADM: Render Chart.js bar chart and summary table
+
+    Note over ADM,DB: Step 9 - Logout
+    ADM->>A: Click Logout
+    A->>API: POST /api/auth/logout
+    API->>DB: UPDATE tUser SET RefreshToken=NULL
+    DB-->>API: OK
+    API-->>A: 200 logged out
+    A->>A: Clear signals and localStorage tokens
+    A->>ADM: Redirect to /login
+```
+
+---
+
+## 32. Role-Wise Flow — Manager Complete Journey
+
+> **Manager** creates and owns budgets, approves or rejects team expenses, and receives notifications.
+
+```mermaid
+sequenceDiagram
+    participant MGR as Manager Browser
+    participant A as Angular App
+    participant INT as authInterceptor
+    participant API as ASP.NET Core API
+    participant DB as SQL Server
+
+    Note over MGR,DB: Step 1 - Login
+    MGR->>A: Enter manager credentials, click Login
+    A->>API: POST /api/auth/login
+    API->>DB: Validate credentials, Role=Manager
+    DB-->>API: User record with RoleID=2
+    API-->>A: 200 accessToken + refreshToken + user with ManagerId claim
+    A->>A: _currentUser.set Role=Manager
+    A->>MGR: Redirect to /dashboard
+
+    Note over MGR,DB: Step 2 - Dashboard Overview
+    MGR->>A: View dashboard
+    A->>INT: GET /api/budgets scoped to manager + GET /api/expenses/stats
+    INT->>API: GET /api/budgets Role=Manager scoped
+    API->>DB: SELECT from vwGetAllBudgets WHERE CreatedByUserID=ManagerID
+    DB-->>API: Manager own budgets with AmountSpent and AmountRemaining
+    API-->>A: 200 own budget list + stats
+    A->>MGR: Render KPI cards for own budgets and team expenses
+
+    Note over MGR,DB: Step 3 - Create a Budget
+    MGR->>A: Navigate to /budgets, click New Budget, fill form, Save
+    A->>INT: POST /api/budgets with CreateBudgetDto
+    INT->>API: POST /api/budgets Role=Admin or Manager guard
+    API->>DB: EXEC uspCreateBudget auto-code BT26007, audit log, notify team employees
+    DB-->>API: NewBudgetID=7
+    API-->>A: 201 budget created
+    A->>MGR: Toast success, budget appears in table
+
+    Note over MGR,DB: Step 4 - View Team Expenses
+    MGR->>A: Navigate to /expenses, filter Status=Pending
+    A->>INT: GET /api/expenses/managed?status=1&pageNumber=1
+    INT->>API: GET /api/expenses/managed Role=Manager or Employee guard
+    API->>DB: SELECT from vwGetAllExpenses WHERE ManagerUserID=CallerID AND Status=1
+    DB-->>API: Pending expense list with submitter names
+    API-->>A: 200 pending expenses
+    A->>MGR: Render expense table with Approve and Reject buttons
+
+    Note over MGR,DB: Step 5 - Approve an Expense
+    MGR->>A: Click Approve on expense row, enter comments, confirm
+    A->>INT: PUT /api/expenses/status/42 with status=2 and comments
+    INT->>API: PUT /api/expenses/status/42 Role=Manager guard
+    API->>DB: EXEC uspUpdateExpenseStatus Status=2
+    DB->>DB: UPDATE tExpense SET Status=2 ApprovedDate=NOW()
+    DB->>DB: UPDATE tBudget AmountSpent += Amount, AmountRemaining adjusted
+    DB->>DB: INSERT tAuditLog Action=Update Expense and Budget
+    DB->>DB: INSERT tNotification Type=2 ExpenseApproved to submitter
+    DB-->>API: OK
+    API-->>A: 200 expense approved
+    A->>MGR: Toast Expense Approved, expense row turns green
+
+    Note over MGR,DB: Step 6 - Reject an Expense
+    MGR->>A: Click Reject on another expense, enter reason, confirm
+    A->>INT: PUT /api/expenses/status/43 with status=3 and rejectionReason
+    INT->>API: PUT /api/expenses/status/43 Role=Manager guard
+    API->>DB: EXEC uspUpdateExpenseStatus Status=3
+    DB->>DB: UPDATE tExpense SET Status=3 RejectionReason=reason
+    DB->>DB: INSERT tAuditLog Action=Update
+    DB->>DB: INSERT tNotification Type=3 ExpenseRejected to submitter
+    DB-->>API: OK
+    API-->>A: 200 expense rejected
+    A->>MGR: Toast Expense Rejected, expense row turns red
+
+    Note over MGR,DB: Step 7 - Update Own Budget
+    MGR->>A: Click Edit on budget, change AmountAllocated, Save
+    A->>INT: PUT /api/budgets/7 with UpdateBudgetDto
+    INT->>API: PUT /api/budgets/7 Role=Admin or Manager guard
+    API->>DB: EXEC uspUpdateBudget no-change detection, audit log, notify team
+    DB-->>API: OK
+    API-->>A: 200 budget updated
+    A->>MGR: Toast success, budget table refreshed
+
+    Note over MGR,DB: Step 8 - Generate Budget Report
+    MGR->>A: Navigate to /reports, select Budget tab, enter BT26007, Generate
+    A->>INT: GET /api/reports/budget?budgetCode=BT26007
+    INT->>API: GET /api/reports/budget Role=Admin or Manager guard
+    API->>DB: EXEC uspGetBudgetReport + uspGetBudgetReportExpenseCounts + uspGetBudgetReportExpenses
+    DB-->>API: Budget header, expense counts, expense list
+    API-->>A: 200 BudgetReportDto
+    A->>MGR: Render budget header card, doughnut chart, expense table
+
+    Note over MGR,DB: Step 9 - View Notifications
+    MGR->>A: Click bell icon in navbar
+    A->>INT: GET /api/notifications?status=1&pageNumber=1
+    INT->>API: GET /api/notifications Role=Manager or Employee guard
+    API->>DB: EXEC uspGetNotificationsByReceiverUserId Status=Unread
+    DB-->>API: Unread notification list
+    API-->>A: 200 notification list
+    A->>MGR: Render notification panel with unread badge
+
+    Note over MGR,DB: Step 10 - Logout
+    MGR->>A: Click Logout
+    A->>API: POST /api/auth/logout
+    API->>DB: UPDATE tUser SET RefreshToken=NULL
+    API-->>A: 200 logged out
+    A->>A: Clear signals and localStorage
+    A->>MGR: Redirect to /login
+```
+
+---
+
+## 33. Role-Wise Flow — Employee Complete Journey
+
+> **Employee** submits expense claims against their manager's budgets and receives approval/rejection notifications.
+
+```mermaid
+sequenceDiagram
+    participant EMP as Employee Browser
+    participant A as Angular App
+    participant INT as authInterceptor
+    participant API as ASP.NET Core API
+    participant DB as SQL Server
+
+    Note over EMP,DB: Step 1 - Login
+    EMP->>A: Enter employee credentials, click Login
+    A->>API: POST /api/auth/login
+    API->>DB: Validate credentials, Role=Employee, ManagerID extracted
+    DB-->>API: User record with RoleID=3 and ManagerID
+    API-->>A: 200 accessToken with ManagerId claim embedded
+    A->>A: _currentUser.set Role=Employee ManagerId stored in signal
+    A->>EMP: Redirect to /dashboard
+
+    Note over EMP,DB: Step 2 - Dashboard Overview
+    EMP->>A: View dashboard
+    A->>INT: GET /api/budgets scoped to employee via ManagerId claim
+    INT->>API: GET /api/budgets Role=Employee extracts ManagerId from JWT
+    API->>DB: SELECT from vwGetAllBudgets WHERE CreatedByUserID=ManagerId
+    DB-->>API: Manager budgets visible to this employee
+    API-->>A: 200 budget list
+    A->>INT: GET /api/expenses/stats for own expenses
+    INT->>API: GET /api/expenses/stats
+    API->>DB: SELECT COUNT grouped by Status WHERE SubmittedByUserID=EmpID
+    DB-->>API: Pending, Approved, Rejected counts and amounts
+    API-->>A: 200 stats
+    A->>EMP: Render dashboard KPI cards and own expense breakdown
+
+    Note over EMP,DB: Step 3 - Browse Available Budgets
+    EMP->>A: Navigate to /budgets
+    A->>INT: GET /api/budgets
+    INT->>API: GET /api/budgets Employee sees manager budgets
+    API->>DB: SELECT from vwGetAllBudgets WHERE CreatedByUserID=ManagerId AND Status=Active
+    DB-->>API: Active budgets with AmountRemaining
+    API-->>A: 200 budget list
+    A->>EMP: Render budget table, click budget to see its expenses
+
+    Note over EMP,DB: Step 4 - Submit an Expense
+    EMP->>A: Click Submit Expense, fill form BudgetID + CategoryID + Amount + Title, Save
+    A->>INT: POST /api/expenses with CreateExpenseDTO
+    INT->>API: POST /api/expenses Role=Manager or Employee guard
+    API->>DB: EXEC uspCreateExpense validate budget Active and AmountRemaining sufficient
+    DB->>DB: INSERT INTO tExpense Status=1 Pending
+    DB->>DB: INSERT tAuditLog Action=Create Expense
+    DB->>DB: INSERT tNotification Type=1 ExpenseSubmitted to ManagerUserID
+    DB-->>API: NewExpenseID
+    API-->>A: 201 expense submitted successfully
+    A->>EMP: Toast Expense Submitted, expense appears in list as Pending
+
+    Note over EMP,DB: Step 5 - Track Own Expenses
+    EMP->>A: Navigate to /expenses, view own submissions
+    A->>INT: GET /api/expenses/managed?pageNumber=1&pageSize=10
+    INT->>API: GET /api/expenses/managed Employee sees own expenses
+    API->>DB: SELECT from vwGetAllExpenses WHERE SubmittedByUserID=EmpID
+    DB-->>API: Own expense list with Status badges and amounts
+    API-->>A: 200 paginated expense list
+    A->>EMP: Render expense table with Pending, Approved, Rejected status badges
+
+    Note over EMP,DB: Step 6 - Receive Approval Notification
+    EMP->>A: Bell badge increments in navbar
+    A->>INT: GET /api/notifications/unread-count polling
+    INT->>API: GET /api/notifications/unread-count
+    API->>DB: SELECT COUNT FROM tNotification WHERE ReceiverUserID=EmpID AND Status=1
+    DB-->>API: unreadCount=1
+    API-->>A: 200 unreadCount=1
+    A->>A: Badge signal updated to 1
+    EMP->>A: Click bell icon to view notifications
+    A->>INT: GET /api/notifications?status=1
+    INT->>API: GET /api/notifications
+    API->>DB: EXEC uspGetNotificationsByReceiverUserId Status=Unread
+    DB-->>API: Notification Type=2 ExpenseApproved with message
+    API-->>A: 200 notification list
+    A->>EMP: Show notification Your expense has been approved
+
+    Note over EMP,DB: Step 7 - Mark Notification as Read
+    EMP->>A: Click notification item to mark as read
+    A->>INT: PUT /api/notifications/read/15
+    INT->>API: PUT /api/notifications/read/15 validate ownership
+    API->>DB: EXEC uspMarkNotificationAsRead NotificationID=15 ReceiverUserID=EmpID
+    DB->>DB: UPDATE tNotification SET Status=2 ReadDate=NOW()
+    DB-->>API: OK
+    API-->>A: 200 marked as read
+    A->>A: unreadCount badge decrements by 1
+    A->>EMP: Notification item appears greyed out as read
+
+    Note over EMP,DB: Step 8 - View Expense Details in Budget
+    EMP->>A: Click budget row to view its expenses breakdown
+    A->>INT: GET /api/budgets/5/expenses?pageNumber=1
+    INT->>API: GET /api/budgets/5/expenses
+    API->>DB: SELECT from vwGetExpensesByBudgetID WHERE BudgetID=5
+    DB-->>API: All expenses under budget including own
+    API-->>A: 200 paginated expense list for budget
+    A->>EMP: Render expense table showing own approved expense
+
+    Note over EMP,DB: Step 9 - Change Password
+    EMP->>A: Navigate to /profile, click Change Password, fill form, Submit
+    A->>INT: POST /api/auth/changepassword with old and new password
+    INT->>API: POST /api/auth/changepassword any authenticated role
+    API->>DB: Verify old PasswordHash then UPDATE tUser SET PasswordHash=newHash
+    DB-->>API: OK
+    API-->>A: 200 password changed successfully
+    A->>EMP: Toast success, close modal
+
+    Note over EMP,DB: Step 10 - Logout
+    EMP->>A: Click Logout
+    A->>API: POST /api/auth/logout
+    API->>DB: UPDATE tUser SET RefreshToken=NULL RefreshTokenExpiryTime=NULL
+    DB-->>API: OK
+    API-->>A: 200 logged out
+    A->>A: Clear _accessToken signal and localStorage keys
+    A->>EMP: Redirect to /login
+```
+
+---
+
+*BudgetTrack Sequence Diagrams — Complete · v1.0 · Generated 2026-03-07*

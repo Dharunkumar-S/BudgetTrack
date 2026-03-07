@@ -1,7 +1,7 @@
 # BudgetTrack — Low Level Design (LLD)
 
 > **Version:** 1.0 · **Stack:** ASP.NET Core 10 · EF Core 10 · SQL Server · Angular 21 · Bootstrap 5
-> **Date:** 2026-03-06
+> **Date:** 2026-03-07
 
 ---
 
@@ -196,8 +196,8 @@ erDiagram
 
 | Enum                 | Values                                                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `BudgetStatus`       | `0=Active`, `1=Closed`                                                                                                  |
-| `ExpenseStatus`      | `0=Pending`, `1=Approved`, `2=Rejected`                                                                                 |
+| `BudgetStatus`       | `1=Active`, `2=Closed`                                                                                                  |
+| `ExpenseStatus`      | `1=Pending`, `2=Approved`, `3=Rejected`                                                                                 |
 | `UserStatus`         | `0=Active`, `1=Inactive`                                                                                                |
 | `NotificationStatus` | `1=Unread`, `2=Read`                                                                                                    |
 | `NotificationType`   | `1=ExpenseSubmitted`, `2=ExpenseApproved`, `3=ExpenseRejected`, `4=BudgetCreated`, `5=BudgetUpdated`, `6=BudgetDeleted` |
@@ -431,7 +431,7 @@ sequenceDiagram
     MW->>MW: context.Items["UserId"] = userId
     MW->>MW: context.Items["User"] = user entity
     MW->>A: _next(context)
-    A->>A: ASP.NET CoreClaims Principal check
+    A-->|ASP.NET Core Claims Principal check| A
     A->>A: [Authorize(Roles="...")] evaluation
     A->>CTL: Authorized — invoke action
     CTL->>CTL: GetUserId() from context.Items

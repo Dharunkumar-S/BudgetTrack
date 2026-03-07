@@ -1,7 +1,7 @@
 # BudgetTrack — Backend Class Diagram
 
-> **Stack:** ASP.NET Core 10 · Entity Framework Core 10 · SQL Server  
-> **Generated:** 2026-03-06
+> **Stack:** ASP.NET Core 10 · Entity Framework Core 10 · SQL Server
+> **Generated:** 2026-03-07
 
 ---
 
@@ -14,6 +14,7 @@
 5. [Controller Layer](#5-controller-layer)
 6. [Infrastructure](#6-infrastructure)
 7. [Full Architecture Overview](#7-full-architecture-overview)
+8. [Role-Based Access Summary](#8-role-based-access-summary)
 
 ---
 
@@ -28,13 +29,12 @@ classDiagram
         +string RoleName
         +bool IsActive
         +DateTime CreatedDate
-        +int? CreatedByUserID
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +int CreatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
+        +DateTime DeletedDate
+        +int DeletedByUserID
         +ICollection~User~ Users
     }
 
@@ -44,13 +44,12 @@ classDiagram
         +string DepartmentCode
         +bool IsActive
         +DateTime CreatedDate
-        +int? CreatedByUserID
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +int CreatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
+        +DateTime DeletedDate
+        +int DeletedByUserID
         +ICollection~User~ Users
         +ICollection~Budget~ Budgets
     }
@@ -65,34 +64,33 @@ classDiagram
         +int DepartmentID
         +int RoleID
         +UserStatus Status
-        +int? ManagerID
-        +string? RefreshToken
-        +DateTime? RefreshTokenExpiryTime
-        +DateTime? LastLoginDate
+        +int ManagerID
+        +string RefreshToken
+        +DateTime RefreshTokenExpiryTime
+        +DateTime LastLoginDate
         +DateTime CreatedDate
-        +int? CreatedByUserID
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +int CreatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
+        +DateTime DeletedDate
+        +int DeletedByUserID
         +Department Department
         +Role Role
-        +User? Manager
+        +User Manager
         +ICollection~User~ Subordinates
         +ICollection~Budget~ BudgetsCreated
         +ICollection~Expense~ ExpensesSubmitted
         +ICollection~Expense~ ExpensesApproved
-        +ICollection~Report~ ReportsGenerated
-        +ICollection~Notification~ Notifications
+        +ICollection~Notification~ NotificationsSent
+        +ICollection~Notification~ NotificationsReceived
         +ICollection~AuditLog~ AuditLogs
     }
 
     class Budget {
         +int BudgetID
         +string Title
-        +string? Code
+        +string Code
         +int DepartmentID
         +decimal AmountAllocated
         +decimal AmountSpent
@@ -101,18 +99,17 @@ classDiagram
         +DateTime EndDate
         +BudgetStatus Status
         +int CreatedByUserID
-        +string? Notes
+        +string Notes
         +DateTime CreatedDate
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
+        +DateTime DeletedDate
+        +int DeletedByUserID
         +Department Department
-        +User? CreatedByUser
-        +User? UpdatedByUser
-        +User? DeletedByUser
+        +User CreatedByUser
+        +User UpdatedByUser
+        +User DeletedByUser
         +ICollection~Expense~ Expenses
     }
 
@@ -122,16 +119,15 @@ classDiagram
         +string CategoryCode
         +bool IsActive
         +DateTime CreatedDate
-        +int? CreatedByUserID
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +int CreatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
-        +User? CreatedByUser
-        +User? UpdatedByUser
-        +User? DeletedByUser
+        +DateTime DeletedDate
+        +int DeletedByUserID
+        +User CreatedByUser
+        +User UpdatedByUser
+        +User DeletedByUser
         +ICollection~Expense~ Expenses
     }
 
@@ -141,28 +137,27 @@ classDiagram
         +int CategoryID
         +string Title
         +decimal Amount
-        +string? MerchantName
+        +string MerchantName
         +int SubmittedByUserID
         +DateTime SubmittedDate
         +ExpenseStatus Status
-        +int? ManagerUserID
-        +DateTime? StatusApprovedDate
-        +string? RejectionReason
-        +string? Notes
-        +string? ApprovalComments
+        +int ManagerUserID
+        +DateTime StatusApprovedDate
+        +string RejectionReason
+        +string Notes
+        +string ApprovalComments
         +DateTime CreatedDate
-        +DateTime? UpdatedDate
-        +int? UpdatedByUserID
+        +DateTime UpdatedDate
+        +int UpdatedByUserID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
+        +DateTime DeletedDate
+        +int DeletedByUserID
         +Budget Budget
         +Category Category
         +User SubmittedByUser
-        +User? ApprovedByUser
-        +User? UpdatedByUser
-        +User? DeletedByUser
+        +User ApprovedByUser
+        +User UpdatedByUser
+        +User DeletedByUser
     }
 
     class Notification {
@@ -173,60 +168,40 @@ classDiagram
         +string Message
         +NotificationStatus Status
         +DateTime CreatedDate
-        +DateTime? ReadDate
-        +string? RelatedEntityType
-        +int? RelatedEntityID
+        +DateTime ReadDate
+        +string RelatedEntityType
+        +int RelatedEntityID
         +bool IsDeleted
-        +DateTime? DeletedDate
-        --
-        +User? Sender
-        +User? Receiver
+        +DateTime DeletedDate
+        +User Sender
+        +User Receiver
     }
 
     class AuditLog {
         +int AuditLogID
-        +int? UserID
+        +int UserID
         +string EntityType
         +int EntityID
         +AuditAction Action
-        +string? OldValue
-        +string? NewValue
-        +string? Description
+        +string OldValue
+        +string NewValue
+        +string Description
         +DateTime CreatedDate
-        --
-        +User? User
+        +User User
     }
 
-    class Report {
-        +int ReportID
-        +string Title
-        +ReportScopeType? Scope
-        +string? Metrics
-        +DateTime GeneratedDate
-        +int GeneratedByUserID
-        +bool IsDeleted
-        +DateTime? DeletedDate
-        +int? DeletedByUserID
-        --
-        +User? GeneratedByUser
-        +User? DeletedByUser
-    }
-
-    %% Entity Relationships
     Role "1" --> "0..*" User : has
     Department "1" --> "0..*" User : employs
     Department "1" --> "0..*" Budget : funds
-    User "1" --> "0..*" User : manages (self-ref)
+    User "1" --> "0..*" User : manages
     User "1" --> "0..*" Budget : creates
     User "1" --> "0..*" Expense : submits
     User "1" --> "0..*" Expense : approves
-    User "1" --> "0..*" Report : generates
+    User "1" --> "0..*" Notification : sends
     User "1" --> "0..*" Notification : receives
     User "1" --> "0..*" AuditLog : logs
     Budget "1" --> "0..*" Expense : contains
     Category "1" --> "0..*" Expense : classifies
-    Notification --> User : sender
-    Notification --> User : receiver
 ```
 
 ---
@@ -238,32 +213,27 @@ classDiagram
     direction LR
 
     class UserStatus {
-        <<enumeration>>
         Active = 0
         Inactive = 1
     }
 
     class BudgetStatus {
-        <<enumeration>>
         Active = 1
         Closed = 2
     }
 
     class ExpenseStatus {
-        <<enumeration>>
-        Pending = 0
-        Approved = 1
-        Rejected = 2
+        Pending = 1
+        Approved = 2
+        Rejected = 3
     }
 
     class NotificationStatus {
-        <<enumeration>>
         Unread = 1
         Read = 2
     }
 
     class NotificationType {
-        <<enumeration>>
         ExpenseSubmitted = 1
         ExpenseApproved = 2
         ExpenseRejected = 3
@@ -273,39 +243,21 @@ classDiagram
     }
 
     class AuditAction {
-        <<enumeration>>
         Create = 1
         Update = 2
         Delete = 3
     }
 
-    class ReportScopeType {
-        <<enumeration>>
-        Period = 1
-        Department = 2
-        Budget = 3
-    }
-
     class UserRole {
-        <<enumeration>>
         Admin = 1
         Manager = 2
         Employee = 3
     }
 
     class SortOrder {
-        <<enumeration>>
         Asc
         Desc
     }
-
-    User --> UserStatus : uses
-    Budget --> BudgetStatus : uses
-    Expense --> ExpenseStatus : uses
-    Notification --> NotificationStatus : uses
-    Notification --> NotificationType : uses
-    AuditLog --> AuditAction : uses
-    Report --> ReportScopeType : uses
 ```
 
 ---
@@ -317,18 +269,13 @@ classDiagram
     direction TB
 
     class IUserRepository {
-        <<interface>>
         +GetByIdAsync(id) Task~User~
         +GetByEmailAsync(email) Task~User~
         +GetUserForLoginAsync(email) Task~User~
         +ValidateRefreshTokenAsync(userId, token) Task~User~
         +GetByEmployeeIdAsync(employeeId) Task~User~
-        +GetByIdWithManagerAsync(id) Task~User~
-        +GetByIdWithDetailsAsync(id) Task~User~
-        +GetAllAsync() Task~IEnumerable~User~~
         +GetAllManagersAsync() Task~IEnumerable~User~~
         +GetEmployeesByManagerIdAsync(managerId) Task~IEnumerable~User~~
-        +UserExistsAsync(id) Task~bool~
         +EmailExistsAsync(email) Task~bool~
         +GenerateEmployeeIdAsync(roleId) Task~string~
         +AddAsync(user) Task
@@ -340,7 +287,6 @@ classDiagram
     }
 
     class IBudgetRepository {
-        <<interface>>
         +CreateBudgetAsync(dto, userId) Task~int~
         +UpdateBudgetAsync(budgetID, dto, userId) Task
         +DeleteBudgetAsync(budgetID, userId) Task
@@ -350,7 +296,6 @@ classDiagram
     }
 
     class IExpenseRepository {
-        <<interface>>
         +GetAllExpensesAsync(filters) Task~PagedResult~AllExpenseDto~~
         +GetExpensesByBudgetIDAsync(budgetID, filters) Task~PagedResult~AllExpenseDto~~
         +GetManagedExpensesAsync(filters) Task~PagedResult~AllExpenseDto~~
@@ -360,7 +305,6 @@ classDiagram
     }
 
     class ICategoryRepository {
-        <<interface>>
         +GetAllCategoriesAsync() Task~List~CategoryResponseDto~~
         +CreateCategoryAsync(dto, userId) Task~int~
         +UpdateCategoryAsync(id, dto, userId) Task~bool~
@@ -368,7 +312,6 @@ classDiagram
     }
 
     class IDepartmentRepository {
-        <<interface>>
         +GetAllDepartmentsAsync() Task~List~DepartmentResponseDto~~
         +CreateDepartmentAsync(dto, userId) Task~int~
         +UpdateDepartmentAsync(id, dto, userId) Task~bool~
@@ -376,8 +319,7 @@ classDiagram
     }
 
     class INotificationRepository {
-        <<interface>>
-        +GetNotificationsByReceiverUserIdAsync(userId, message, status, sortOrder, page, size) Task~PagedResult~GetNotificationDto~~
+        +GetNotificationsByReceiverUserIdAsync(userId, msg, status, sort, page, size) Task~PagedResult~GetNotificationDto~~
         +MarkNotificationAsReadAsync(id, userId) Task~bool~
         +MarkAllNotificationsAsReadAsync(userId) Task~int~
         +DeleteNotificationAsync(id, userId) Task~bool~
@@ -385,14 +327,12 @@ classDiagram
     }
 
     class IAuditRepository {
-        <<interface>>
         +GetAllAuditLogsAsync() Task~List~AuditLogDto~~
         +GetAllAuditLogsPaginatedAsync(page, size, search, action, entityType) Task~PagedResult~AuditLogDto~~
         +GetAuditLogsByUserIdAsync(userId) Task~List~AuditLogDto~~
     }
 
     class IReportRepository {
-        <<interface>>
         +GetPeriodReportAsync(startDate, endDate) Task~PeriodReportDto~
         +GetDepartmentReportAsync(departmentName) Task~DepartmentReportDto~
         +GetBudgetReportAsync(budgetCode) Task~BudgetReportDto~
@@ -405,7 +345,6 @@ classDiagram
         +AddAsync(user) Task
         +UpdateAsync(user) Task
         +DeleteAsync(id, deletedByUserId) Task
-        ...
     }
 
     class BudgetRepository {
@@ -413,9 +352,7 @@ classDiagram
         +CreateBudgetAsync(dto, userId) Task~int~
         +UpdateBudgetAsync(budgetID, dto, userId) Task
         +DeleteBudgetAsync(budgetID, userId) Task
-        +GetBudgetByIdAsync(budgetID) Task~BudgetDto~
         +GetAllBudgetsAsync(filters) Task~PagedResult~BudgetDto~~
-        +GetBudgetsByCreatedByUserIdWithPaginationAsync(userId, filters) Task~PagedResult~BudgetDto~~
     }
 
     class ExpenseRepository {
@@ -444,7 +381,7 @@ classDiagram
 
     class NotificationRepository {
         -BudgetTrackDbContext _context
-        +GetNotificationsByReceiverUserIdAsync(...) Task~PagedResult~GetNotificationDto~~
+        +GetNotificationsByReceiverUserIdAsync() Task~PagedResult~GetNotificationDto~~
         +MarkNotificationAsReadAsync(id, userId) Task~bool~
         +MarkAllNotificationsAsReadAsync(userId) Task~int~
         +DeleteNotificationAsync(id, userId) Task~bool~
@@ -454,7 +391,7 @@ classDiagram
     class AuditRepository {
         -BudgetTrackDbContext _context
         +GetAllAuditLogsAsync() Task~List~AuditLogDto~~
-        +GetAllAuditLogsPaginatedAsync(...) Task~PagedResult~AuditLogDto~~
+        +GetAllAuditLogsPaginatedAsync() Task~PagedResult~AuditLogDto~~
         +GetAuditLogsByUserIdAsync(userId) Task~List~AuditLogDto~~
     }
 
@@ -484,7 +421,6 @@ classDiagram
     direction TB
 
     class IBudgetService {
-        <<interface>>
         +CreateBudgetAsync(dto, userId) Task~int~
         +UpdateBudgetAsync(budgetID, dto, userId) Task
         +DeleteBudgetAsync(budgetID, userId) Task
@@ -493,7 +429,6 @@ classDiagram
     }
 
     class IExpenseService {
-        <<interface>>
         +GetAllExpensesAsync(filters) Task~PagedResult~AllExpenseDto~~
         +GetExpensesByBudgetIDAsync(budgetID, filters) Task~PagedResult~AllExpenseDto~~
         +GetManagedExpensesAsync(filters) Task~PagedResult~AllExpenseDto~~
@@ -503,7 +438,6 @@ classDiagram
     }
 
     class ICategoryService {
-        <<interface>>
         +GetAllCategoriesAsync() Task~List~CategoryResponseDto~~
         +CreateCategoryAsync(dto, userId) Task~int~
         +UpdateCategoryAsync(id, dto, userId) Task~bool~
@@ -511,7 +445,6 @@ classDiagram
     }
 
     class IDepartmentService {
-        <<interface>>
         +GetAllDepartmentsAsync() Task~List~DepartmentResponseDto~~
         +CreateDepartmentAsync(dto, userId) Task~int~
         +UpdateDepartmentAsync(id, dto, userId) Task~bool~
@@ -519,8 +452,7 @@ classDiagram
     }
 
     class INotificationService {
-        <<interface>>
-        +GetNotificationsByReceiverUserIdAsync(userId, message, status, sortOrder, page, size) Task~PagedResult~GetNotificationDto~~
+        +GetNotificationsByReceiverUserIdAsync(userId, msg, status, sort, page, size) Task~PagedResult~GetNotificationDto~~
         +MarkNotificationAsReadAsync(id, userId) Task~bool~
         +MarkAllNotificationsAsReadAsync(userId) Task~int~
         +DeleteNotificationAsync(id, userId) Task~bool~
@@ -528,14 +460,12 @@ classDiagram
     }
 
     class IAuditService {
-        <<interface>>
         +GetAllAuditLogsAsync() Task~List~AuditLogDto~~
         +GetAllAuditLogsPaginatedAsync(page, size, search, action, entityType) Task~PagedResult~AuditLogDto~~
         +GetAuditLogsByUserIdAsync(userId) Task~List~AuditLogDto~~
     }
 
     class IReportService {
-        <<interface>>
         +GetPeriodReportAsync(startDate, endDate) Task~PeriodReportDto~
         +GetDepartmentReportAsync(departmentName) Task~DepartmentReportDto~
         +GetBudgetReportAsync(budgetCode) Task~BudgetReportDto~
@@ -577,7 +507,7 @@ classDiagram
 
     class NotificationService {
         -INotificationRepository _repo
-        +GetNotificationsByReceiverUserIdAsync(...) Task~PagedResult~GetNotificationDto~~
+        +GetNotificationsByReceiverUserIdAsync() Task~PagedResult~GetNotificationDto~~
         +MarkNotificationAsReadAsync(id, userId) Task~bool~
         +MarkAllNotificationsAsReadAsync(userId) Task~int~
         +DeleteNotificationAsync(id, userId) Task~bool~
@@ -587,7 +517,7 @@ classDiagram
     class AuditService {
         -IAuditRepository _repo
         +GetAllAuditLogsAsync() Task~List~AuditLogDto~~
-        +GetAllAuditLogsPaginatedAsync(...) Task~PagedResult~AuditLogDto~~
+        +GetAllAuditLogsPaginatedAsync() Task~PagedResult~AuditLogDto~~
         +GetAuditLogsByUserIdAsync(userId) Task~List~AuditLogDto~~
     }
 
@@ -631,94 +561,92 @@ classDiagram
     direction TB
 
     class ControllerBase {
-        <<ASP.NET Core>>
+        ASP.NET Core Base
     }
 
     class BaseApiController {
-        <<abstract>>
-        #int UserId
-        #int GetUserId()
+        int UserId
+        +GetUserId() int
     }
 
     class AuthController {
         -IAuthService _authService
         -IUserRepository _userRepository
-        +AdminRegister(dto) Task POST /api/auth/createuser
-        +Login(dto) Task POST /api/auth/login
-        +ChangePassword(dto) Task POST /api/auth/changepassword
-        +RefreshToken(dto) Task POST /api/auth/token/refresh
-        +Logout() Task POST /api/auth/logout
-        +Verify() IActionResult GET /api/auth/verify
-        +GetUserProfile() Task GET /api/users/profile
-        +GetUsers(filters) Task GET /api/users
-        +UpdateUser(userId, dto) Task PUT /api/users/userId
+        +AdminRegister(dto) Task
+        +Login(dto) Task
+        +ChangePassword(dto) Task
+        +RefreshToken(dto) Task
+        +Logout() Task
+        +Verify() IActionResult
+        +GetUserProfile() Task
+        +GetUsers(filters) Task
+        +UpdateUser(userId, dto) Task
     }
 
     class BudgetController {
         -IBudgetService _budgetService
-        +GetAllBudgets(filters) Task GET /api/budgets/admin
-        +GetBudgetsByUserWithPagination(filters) Task GET /api/budgets
-        +CreateBudget(dto) Task POST /api/budgets
-        +UpdateBudget(budgetID, dto) Task PUT /api/budgets/id
-        +DeleteBudget(budgetID) Task DELETE /api/budgets/id
-        +GetExpensesByBudgetID(budgetID, filters) Task GET /api/budgets/id/expenses
-        -IsDuplicateBudgetKey(ex) bool
-        -GetDuplicateBudgetMessage(ex) string
+        +GetAllBudgets(filters) Task
+        +GetBudgetsByUserWithPagination(filters) Task
+        +CreateBudget(dto) Task
+        +UpdateBudget(budgetID, dto) Task
+        +DeleteBudget(budgetID) Task
+        +GetExpensesByBudgetID(budgetID, filters) Task
     }
 
     class ExpenseController {
         -IExpenseService _service
-        +GetExpenseStatistics(filters) Task GET /api/expenses/stats
-        +GetAllExpenses(filters) Task GET /api/expenses
-        +GetManagedExpenses(filters) Task GET /api/expenses/managed
-        +CreateExpense(dto) Task POST /api/expenses
-        +UpdateExpenseStatus(expenseID, dto) Task PUT /api/expenses/status/id
+        +GetExpenseStatistics(filters) Task
+        +GetAllExpenses(filters) Task
+        +GetManagedExpenses(filters) Task
+        +CreateExpense(dto) Task
+        +UpdateExpenseStatus(expenseID, dto) Task
     }
 
     class CategoryController {
         -ICategoryService _service
-        +GetAllCategories() Task GET /api/categories
-        +CreateCategory(dto) Task POST /api/categories
-        +UpdateCategory(categoryID, dto) Task PUT /api/categories/id
-        +DeleteCategory(categoryID) Task DELETE /api/categories/id
+        +GetAllCategories() Task
+        +CreateCategory(dto) Task
+        +UpdateCategory(categoryID, dto) Task
+        +DeleteCategory(categoryID) Task
     }
 
     class DepartmentController {
         -IDepartmentService _service
-        +GetAllDepartments() Task GET /api/departments
-        +CreateDepartment(dto) Task POST /api/departments
-        +UpdateDepartment(departmentID, dto) Task PUT /api/departments/id
-        +DeleteDepartment(departmentID) Task DELETE /api/departments/id
+        +GetAllDepartments() Task
+        +CreateDepartment(dto) Task
+        +UpdateDepartment(departmentID, dto) Task
+        +DeleteDepartment(departmentID) Task
     }
 
     class UserController {
         -IUserRepository _repo
-        +GetUserStats() Task GET /api/users/stats
-        +GetManagers() Task GET /api/users/managers
-        +GetEmployeesByManagerId(managerId) Task GET /api/users/id/employees
-        +SoftDeleteUser(userId) Task DELETE /api/users/id
+        +GetUserStats() Task
+        +GetManagers() Task
+        +GetEmployeesByManagerId(managerId) Task
+        +SoftDeleteUser(userId) Task
     }
 
     class NotificationController {
         -INotificationService _service
-        +GetNotifications(filters) Task GET /api/notifications
-        +MarkAsRead(notificationID) Task PUT /api/notifications/read/id
-        +MarkAllAsRead() Task PUT /api/notifications/readAll
-        +DeleteNotification(notificationID) Task DELETE /api/notifications/id
-        +DeleteAllNotifications() Task DELETE /api/notifications/deleteAll
+        +GetNotifications(filters) Task
+        +GetUnreadCount() Task
+        +MarkAsRead(notificationID) Task
+        +MarkAllAsRead() Task
+        +DeleteNotification(notificationID) Task
+        +DeleteAllNotifications() Task
     }
 
     class AuditController {
         -IAuditService _service
-        +GetAllAuditLogs(filters) Task GET /api/audits
-        +GetAuditLogsByUserId(userId) Task GET /api/audits/userId
+        +GetAllAuditLogs(filters) Task
+        +GetAuditLogsByUserId(userId) Task
     }
 
     class ReportController {
         -IReportService _service
-        +GetPeriodReport(startDate, endDate) Task GET /api/reports/period
-        +GetDepartmentReport() Task GET /api/reports/department
-        +GetBudgetReport(budgetCode) Task GET /api/reports/budget
+        +GetPeriodReport(startDate, endDate) Task
+        +GetDepartmentReport(departmentName) Task
+        +GetBudgetReport(budgetCode) Task
     }
 
     ControllerBase <|-- BaseApiController
@@ -728,9 +656,9 @@ classDiagram
     BaseApiController <|-- DepartmentController
     BaseApiController <|-- UserController
     BaseApiController <|-- NotificationController
-    BaseApiController <|-- AuditController
     BaseApiController <|-- ReportController
     BaseApiController <|-- AuthController
+    ControllerBase <|-- AuditController
 
     BudgetController --> IBudgetService
     ExpenseController --> IExpenseService
@@ -757,17 +685,15 @@ classDiagram
         +DbSet~Expense~ Expenses
         +DbSet~Category~ Categories
         +DbSet~Notification~ Notifications
-        +DbSet~Report~ Reports
         +DbSet~AuditLog~ AuditLogs
         +DbSet~Department~ Departments
         +DbSet~Role~ Roles
-        #OnModelCreating(modelBuilder) void
+        +OnModelCreating(modelBuilder) void
     }
 
     class JwtMiddleware {
         -RequestDelegate _next
         -ILogger _logger
-        +JwtMiddleware(next, logger)
         +InvokeAsync(context, jwtSettings, userRepository) Task
         -ExtractTokenFromHeader(context) string
         -AttachUserToContext(context, token, settings, repo) Task
@@ -782,7 +708,6 @@ classDiagram
     }
 
     class IAuthService {
-        <<interface>>
         +AdminRegisterUserAsync(dto, adminId) Task~User~
         +LoginAsync(dto) Task~AuthResponseDto~
         +ChangePasswordAsync(userId, oldPwd, newPwd) Task
@@ -810,7 +735,6 @@ classDiagram
         +int TotalPages
         +bool HasNextPage
         +bool HasPreviousPage
-        +Create(items, page, size, total) PagedResult~T~$
     }
 
     IAuthService <|.. AuthService
@@ -826,7 +750,6 @@ classDiagram
     BudgetTrackDbContext --> Role
     BudgetTrackDbContext --> Notification
     BudgetTrackDbContext --> AuditLog
-    BudgetTrackDbContext --> Report
 ```
 
 ---
@@ -834,129 +757,38 @@ classDiagram
 ## 7. Full Architecture Overview
 
 ```mermaid
-classDiagram
-    direction LR
+flowchart LR
+    subgraph Frontend["Angular 21 SPA (Port 4200)"]
+        SPA["Components + Services"]
+        INT["authInterceptor"]
+        GRD["authGuard + roleGuard"]
+    end
 
-    class AngularSPA {
-        <<Frontend>>
-        +authInterceptor
-        +authGuard
-        +roleGuard
-        +BudgetService
-        +ExpenseService
-        +AuthService
-    }
+    subgraph Backend["ASP.NET Core 10 API (Port 5131)"]
+        MW["JwtMiddleware"]
+        CTL["Controllers"]
+        SVC["Services"]
+        REPO["Repositories"]
+    end
 
-    class JwtMiddleware {
-        <<Middleware>>
-        +InvokeAsync()
-        +ValidateToken()
-        +AttachUserToContext()
-    }
+    subgraph Database["SQL Server"]
+        TABLES["tUser, tBudget, tExpense,\ntCategory, tDepartment, tRole,\ntNotification, tAuditLog"]
+        VIEWS["vwGetAllExpenses\nvwGetAllBudgets\nvwGetUserProfile"]
+        SPS["Stored Procedures: usp*"]
+    end
 
-    class BaseApiController {
-        <<abstract Controller>>
-        #int UserId
-    }
-
-    namespace Controllers {
-        class AuthController
-        class BudgetController
-        class ExpenseController
-        class CategoryController
-        class DepartmentController
-        class UserController
-        class NotificationController
-        class AuditController
-        class ReportController
-    }
-
-    namespace Services {
-        class IAuthService
-        class IBudgetService
-        class IExpenseService
-        class ICategoryService
-        class IDepartmentService
-        class INotificationService
-        class IAuditService
-        class IReportService
-    }
-
-    namespace Repositories {
-        class IUserRepository
-        class IBudgetRepository
-        class IExpenseRepository
-        class ICategoryRepository
-        class IDepartmentRepository
-        class INotificationRepository
-        class IAuditRepository
-        class IReportRepository
-    }
-
-    class BudgetTrackDbContext {
-        <<EF Core DbContext>>
-    }
-
-    class SQLServer {
-        <<Database>>
-        +tUser
-        +tBudget
-        +tExpense
-        +tCategory
-        +tDepartment
-        +tRole
-        +tNotification
-        +tAuditLog
-        +tReport
-        +Views
-        +StoredProcedures
-    }
-
-    AngularSPA --> JwtMiddleware : HTTP Request + Bearer Token
-    JwtMiddleware --> BaseApiController : Validated context
-    BaseApiController <|-- AuthController
-    BaseApiController <|-- BudgetController
-    BaseApiController <|-- ExpenseController
-    BaseApiController <|-- CategoryController
-    BaseApiController <|-- DepartmentController
-    BaseApiController <|-- UserController
-    BaseApiController <|-- NotificationController
-    BaseApiController <|-- AuditController
-    BaseApiController <|-- ReportController
-
-    AuthController --> IAuthService
-    BudgetController --> IBudgetService
-    ExpenseController --> IExpenseService
-    CategoryController --> ICategoryService
-    DepartmentController --> IDepartmentService
-    NotificationController --> INotificationService
-    AuditController --> IAuditService
-    ReportController --> IReportService
-
-    IAuthService --> IUserRepository
-    IBudgetService --> IBudgetRepository
-    IExpenseService --> IExpenseRepository
-    ICategoryService --> ICategoryRepository
-    IDepartmentService --> IDepartmentRepository
-    INotificationService --> INotificationRepository
-    IAuditService --> IAuditRepository
-    IReportService --> IReportRepository
-
-    IUserRepository --> BudgetTrackDbContext
-    IBudgetRepository --> BudgetTrackDbContext
-    IExpenseRepository --> BudgetTrackDbContext
-    ICategoryRepository --> BudgetTrackDbContext
-    IDepartmentRepository --> BudgetTrackDbContext
-    INotificationRepository --> BudgetTrackDbContext
-    IAuditRepository --> BudgetTrackDbContext
-    IReportRepository --> BudgetTrackDbContext
-
-    BudgetTrackDbContext --> SQLServer : EF Core SQL Queries + SP Calls
+    SPA --> INT
+    GRD --> SPA
+    INT -->|"HTTP + Bearer JWT"| MW
+    MW --> CTL --> SVC --> REPO
+    REPO -->|"EF Core + Raw SQL"| TABLES
+    REPO --> VIEWS
+    REPO --> SPS
 ```
 
 ---
 
-## Role-Based Access Summary
+## 8. Role-Based Access Summary
 
 | Controller               | Endpoint                           | Roles             |
 | ------------------------ | ---------------------------------- | ----------------- |
@@ -966,26 +798,28 @@ classDiagram
 | `AuthController`         | GET `/api/users`                   | Admin, Manager    |
 | `AuthController`         | PUT `/api/users/{id}`              | Admin             |
 | `BudgetController`       | GET `/api/budgets/admin`           | Admin             |
-| `BudgetController`       | GET `/api/budgets`                 | Manager, Employee |
-| `BudgetController`       | POST `/api/budgets`                | Manager           |
-| `BudgetController`       | PUT `/api/budgets/{id}`            | Manager           |
-| `BudgetController`       | DELETE `/api/budgets/{id}`         | Manager           |
-| `BudgetController`       | GET `/api/budgets/{id}/expenses`   | All               |
-| `ExpenseController`      | GET `/api/expenses/stats`          | All               |
+| `BudgetController`       | GET `/api/budgets`                 | All authenticated |
+| `BudgetController`       | POST `/api/budgets`                | Admin, Manager    |
+| `BudgetController`       | PUT `/api/budgets/{id}`            | Admin, Manager    |
+| `BudgetController`       | DELETE `/api/budgets/{id}`         | Admin, Manager    |
+| `BudgetController`       | GET `/api/budgets/{id}/expenses`   | All authenticated |
+| `ExpenseController`      | GET `/api/expenses/stats`          | All authenticated |
 | `ExpenseController`      | GET `/api/expenses`                | Admin             |
 | `ExpenseController`      | GET `/api/expenses/managed`        | Manager, Employee |
 | `ExpenseController`      | POST `/api/expenses`               | Manager, Employee |
 | `ExpenseController`      | PUT `/api/expenses/status/{id}`    | Manager           |
-| `CategoryController`     | GET `/api/categories`              | All               |
-| `CategoryController`     | POST `/api/categories`             | Admin             |
-| `CategoryController`     | PUT `/api/categories/{id}`         | Admin             |
-| `CategoryController`     | DELETE `/api/categories/{id}`      | Admin             |
-| `DepartmentController`   | GET `/api/departments`             | All               |
+| `CategoryController`     | GET `/api/categories`              | All authenticated |
+| `CategoryController`     | POST `/api/categories`             | Admin, Manager    |
+| `CategoryController`     | PUT `/api/categories/{id}`         | Admin, Manager    |
+| `CategoryController`     | DELETE `/api/categories/{id}`      | Admin, Manager    |
+| `DepartmentController`   | GET `/api/departments`             | All authenticated |
 | `DepartmentController`   | POST/PUT/DELETE `/api/departments` | Admin             |
+| `NotificationController` | GET `/api/notifications/unread-count` | Manager, Employee |
+| `NotificationController` | All other endpoints                | Manager, Employee |
 | `UserController`         | GET `/api/users/stats`             | Admin             |
-| `UserController`         | GET `/api/users/managers`          | All               |
-| `UserController`         | GET `/api/users/{id}/employees`    | All               |
-| `NotificationController` | All endpoints                      | Manager, Employee |
+| `UserController`         | GET `/api/users/managers`          | All authenticated |
+| `UserController`         | GET `/api/users/{id}/employees`    | All authenticated |
+| `UserController`         | DELETE `/api/users/{id}`           | Admin             |
 | `AuditController`        | All endpoints                      | Admin             |
 | `ReportController`       | GET `/api/reports/period`          | Admin             |
 | `ReportController`       | GET `/api/reports/department`      | Admin             |
@@ -993,4 +827,4 @@ classDiagram
 
 ---
 
-*BudgetTrack Class Diagram — Generated 2026-03-06*
+*BudgetTrack Class Diagram — Generated 2026-03-07*

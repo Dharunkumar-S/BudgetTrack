@@ -2,7 +2,7 @@
 
 > **Stack:** ASP.NET Core 10 · Entity Framework Core 10 · SQL Server Stored Procedures · Angular 21 · Bootstrap 5  
 > **Base URL:** `http://localhost:5131`  
-> **Generated:** 2026-03-05
+> **Generated:** 2026-03-07
 
 ---
 
